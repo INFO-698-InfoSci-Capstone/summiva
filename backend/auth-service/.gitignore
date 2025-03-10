@@ -1,0 +1,52 @@
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+.env
+
+# Logs and runtime files
+*.log
+*.out
+*.pid
+*.seed
+
+# SQLite database files (if used for testing)
+test.db
+*.sqlite3
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache/
+
+# Pytest cache
+.pytest_cache/
+
+# Ignore VSCode settings (if used)
+.vscode/
+
+# Docker-related files
+*.dockerignore
+docker-compose.override.yml
+
+# Ignore dependencies
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Ignore any secrets or sensitive files
+.env.local
+secrets/
+
+# Ignore compiled distributions
+dist/
+build/
+*.egg-info/
+
+# Ignore temporary files
+*.swp
+*~
