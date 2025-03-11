@@ -1,0 +1,45 @@
+services:
+  summarization-service:
+    build: .
+    container_name: summarization_service_api
+    ports:
+      - "8001:8001"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      AUTH_SERVICE_URL: http://auth-service:8000
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: rpc://
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  # celery-worker:
+  #   build: .
+  #   container_name: summiva_celery_worker
+  #   command: ["celery", "-A", "src.celery_tasks.worker.celery_app", "worker", "--loglevel=info"]
+  #   environment:
+  #     MONGODB_URI: mongodb://mongodb:27017
+  #     AUTH_SERVICE_URL: http://auth-service:8000
+  #     CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+  #     CELERY_RESULT_BACKEND: rpc://
+  #   depends_on:
+  #     - mongodb
+  #     - rabbitmq
+
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   container_name: summiva_rabbitmq
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+
+  mongodb:
+    image: mongo:7.0
+    container_name: summiva_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
