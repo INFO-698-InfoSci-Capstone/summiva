@@ -7,7 +7,7 @@ requests==2.31.0
 pymongo==4.6.0
 
 # Celery + RabbitMQ
-# celery==5.2.7
+celery==5.2.7
 
 # Transformers Summarization
 # transformers==4.41.2

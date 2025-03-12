@@ -7,7 +7,7 @@ from bson.objectid import ObjectId
 
 from src.config.settings import Settings
 from src.database.mongo_session import mongo_db
-# from src.celery_tasks.worker import run_summarization
+from src.celery_tasks.worker import run_summarization
 
 router = APIRouter()
 security = HTTPBearer()
@@ -15,7 +15,7 @@ settings = Settings()
 
 def fetch_user_from_auth(bearer_token: str):
     """Call external Auth Service /user/me, passing Bearer token."""
-    url = f"{settings.AUTH_SERVICE_URL}/user/me"
+    url = f"{settings.AUTH_SERVICE_URL}/api/v1/auth/users/me"
     headers = {"Authorization": f"Bearer {bearer_token}"}
     resp = requests.get(url, headers=headers, timeout=5)
     if resp.status_code != 200:
@@ -68,7 +68,7 @@ def enqueue_summarization(req: SummarizeRequest, creds: HTTPAuthorizationCredent
         )
 
     # Enqueue Celery task
-    # run_summarization.delay(str(doc_id), raw_text)
+    run_summarization.delay(str(doc_id), raw_text)
 
     return {
         "doc_id": str(doc_id),

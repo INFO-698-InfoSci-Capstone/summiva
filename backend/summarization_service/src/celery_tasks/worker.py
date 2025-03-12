@@ -1,7 +1,7 @@
 import celery
 from datetime import datetime
 from src.config.settings import Settings
-# from src.core.summarizer import summarize_text
+from src.core.summarizer import summarize_text
 from src.database.mongo_session import mongo_db
 from bson.objectid import ObjectId
 
@@ -16,17 +16,16 @@ celery_app = celery.Celery(
 
 @celery_app.task
 def run_summarization(doc_id_str: str, raw_text: str):
-    # """Celery task to do summarization asynchronously."""
-    # # summary = summarize_text(raw_text)
-    # docs_collection = mongo_db['docs']
-    # # Update doc with summary
-    # docs_collection.update_one(
-    #     {"_id": ObjectId(doc_id_str)},
-    #     {"$set": {
-    #         "summary_text": summary,
-    #         "status": "completed",
-    #         "updated_at": datetime.utcnow()
-    #     }}
-    # )
-    # return summary
-    pass
+    """Celery task to do summarization asynchronously."""
+    summary = summarize_text(raw_text)
+    docs_collection = mongo_db['docs']
+    # Update doc with summary
+    docs_collection.update_one(
+        {"_id": ObjectId(doc_id_str)},
+        {"$set": {
+            "summary_text": summary,
+            "status": "completed",
+            "updated_at": datetime.utcnow()
+        }}
+    )
+    return summary
