@@ -5,7 +5,7 @@ from src.database.session import SessionLocal
 from src.core.auth_logic import (
     verify_password, get_password_hash, create_access_token, create_refresh_token, decode_access_token
 )
-from src.schemas.user_schemas import UserCreate, UserRead, Token
+from src.schemas.user_schemas import UserCreate, UserRead, Token, RefreshToken
 from src.models.user import User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
@@ -42,13 +42,14 @@ def login(user: UserCreate, db: Session = Depends(get_db)):
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 @router.post("/refresh", response_model=Token)
-def refresh_token(refresh_token: str):
-    token_data = decode_access_token(refresh_token)
+def refresh_token(data: RefreshToken):
+    token_data = decode_access_token(data.refresh_token)
     if not token_data:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     
-    new_access_token = create_access_token(data={"sub": token_data.email})
-    return {"access_token": new_access_token, "token_type": "bearer"}
+    
+    access_token = create_access_token(data={"sub": token_data.email})
+    return {"access_token": access_token, "refresh_token": data.refresh_token, "token_type": "bearer"}
 
 @router.get("/users/me", response_model=UserRead)
 def read_current_user(token: str = Security(oauth2_scheme), db: Session = Depends(get_db)):
