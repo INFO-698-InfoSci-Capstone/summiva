@@ -1,0 +1,117 @@
+services:
+  summarization-service:
+    build: .
+    container_name: summarization_service_api
+    ports:
+      - "8001:8001"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      AUTH_SERVICE_URL: http://auth-service:8000
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: rpc://
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      celery-worker:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+
+  celery-worker:
+    build: .
+    container_name: summiva_celery_worker
+    command: ["celery", "-A", "src.celery_tasks.worker.celery_app", "worker", "--loglevel=info"]
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      AUTH_SERVICE_URL: http://auth-service:8000
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: rpc://
+    depends_on:
+      - mongodb
+      - rabbitmq
+    # Health check for Celery can be trickier. Example approach:
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        # This attempts a naive ping to the local Celery process
+        # “celery --help” or “celery -A src.celery_tasks.worker.celery_app inspect ping”
+        # Typically requires containers’ networking. We assume a short check here:
+        "celery -A src.celery_tasks.worker.celery_app inspect ping || exit 1"
+      ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: summiva_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    # We can do a simple rabbitmq-diagnostics check here
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7.0
+    container_name: summiva_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    # Health check uses 'mongosh' or 'mongo' to run a ping command
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "mongosh --quiet --eval 'db.runCommand({ ping: 1 })' || exit 1"
+      ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build:
+      context: ../auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://summiva_user:summiva_pass@postgresql/summiva_db
+      JWT_SECRET_KEY: your_jwt_secret_key_here
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgresql:
+        condition: service_healthy
+
+  postgresql:
+    image: postgres:16
+    container_name: summiva_postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: summiva_user
+      POSTGRES_PASSWORD: summiva_pass
+      POSTGRES_DB: summiva_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U summiva_user -d summiva_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  mongodb_data:
+  postgres_data:

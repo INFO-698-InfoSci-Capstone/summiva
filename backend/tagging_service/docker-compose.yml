@@ -1,0 +1,16 @@
+  tagging-service:
+    build: .
+    container_name: tagging_service_api
+    ports:
+      - "8002:8002"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      POSTGRES_URI: postgresql://summiva_user:summiva_pass@postgresql/summiva_db
+      CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
+      CELERY_RESULT_BACKEND: rpc://
+    depends_on:
+      - rabbitmq
+      - mongodb
+      - postgresql
+    networks:
+      - summiva-network 

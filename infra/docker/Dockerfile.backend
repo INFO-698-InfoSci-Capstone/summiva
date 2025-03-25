@@ -1,1 +1,44 @@
- 
+ # Base image
+FROM python:3.11-slim
+
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    POETRY_VIRTUALENVS_CREATE=false \
+    PYTHONPATH="/app/src"
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Copy source code
+COPY . .
+
+# Expose default backend port
+EXPOSE 8000
+
+# Logging config
+ENV LOG_CFG=config/logging.conf
+
+# Run backend (default FastAPI app)
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# The Dockerfile.backend file is used to build the backend service. It uses the python:3.11-slim image as the base image and sets up the environment variables.
+# The Dockerfile.backend file installs system dependencies, Python dependencies, and copies the source code. It also exposes the default backend port and sets the logging configuration.
+# The Dockerfile.backend file runs the backend service using the uvicorn command. The backend service is a FastAPI app that listens on port 8000.
+# The Dockerfile.backend file is straightforward and easy to understand. It sets up the backend service in a Docker container.
+# Step 3: Create a Docker Compose file
+# The Docker Compose file is used to define and run multi-container Docker applications. It’s a YAML file that defines services, networks, and volumes.
+
+    

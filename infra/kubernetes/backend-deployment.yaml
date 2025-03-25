@@ -1,1 +1,44 @@
  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: summiva-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: summiva-backend
+  template:
+    metadata:
+      labels:
+        app: summiva-backend
+    spec:
+      containers:
+      - name: backend
+        image: summiva-backend:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: backend-secrets
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: backend-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: summiva-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: summiva-backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000

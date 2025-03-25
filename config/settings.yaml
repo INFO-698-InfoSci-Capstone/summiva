@@ -1,1 +1,46 @@
  
+default:
+  app_name: "Summiva Platform"
+  version: "1.0"
+  log_level: "INFO"
+  jwt_algorithm: "HS256"
+  access_token_expire_minutes: 60
+
+  auth_service_url: "http://auth-service:8000"
+
+  postgres:
+    uri: "postgresql://summiva_user:summiva_pass@postgresql/summiva_db"
+
+  mongodb:
+    uri: "mongodb://mongodb:27017"
+
+  celery:
+    broker_url: "amqp://guest:guest@rabbitmq:5672//"
+    result_backend: "rpc://"
+
+  search:
+    elastic_url: "http://elasticsearch:9200"
+    faiss_index_path: "faiss/summiva.index"
+    faiss_doc_map_path: "faiss/doc_ids.npy"
+
+  log_config: "config/logging.conf"
+
+development:
+  log_level: "DEBUG"
+  auth_service_url: "http://localhost:8000"
+  postgres:
+    uri: "postgresql://localhost/summiva_db"
+  mongodb:
+    uri: "mongodb://localhost:27017"
+
+production:
+  log_level: "WARNING"
+  auth_service_url: "https://auth.summiva.com"
+  postgres:
+    uri: "postgresql://summiva_user:summiva_pass@prod-db.internal/summiva_db"
+  mongodb:
+    uri: "mongodb://prod-mongo:27017"
+  search:
+    elastic_url: "http://prod-elasticsearch:9200"
+    faiss_index_path: "/mnt/data/faiss.index"
+    faiss_doc_map_path: "/mnt/data/doc_ids.npy"
