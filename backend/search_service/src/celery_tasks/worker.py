@@ -1,6 +1,6 @@
 import celery
 from datetime import datetime
-from backend.settings import Settings
+from ....settings import Settings
 from src.core.summarizer import summarize_text
 from src.database.mongo_session import mongo_db
 from bson.objectid import ObjectId

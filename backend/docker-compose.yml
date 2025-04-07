@@ -45,7 +45,9 @@ services:
 
   # --- Summarization Service ---
   summarization-service:
-    build: ./summarization_service
+    build:
+      context: .
+      dockerfile: summarization_service/Dockerfile
     container_name: summarization_service_api
     ports:
       - "8001:8001"
@@ -67,9 +69,11 @@ services:
       - summiva-net
 
   celery-worker:
-    build: ./summarization_service
+    build:
+      context: .
+      dockerfile: summarization_service/Dockerfile
     container_name: summiva_celery_worker
-    command: ["celery", "-A", "src.celery_tasks.worker.celery_app", "worker", "--loglevel=info"]
+    command: ["celery", "-A", "summarization_service.src.celery_tasks.worker.celery_app", "worker", "--loglevel=info"]
     environment:
       MONGODB_URI: mongodb://mongodb:27017
       AUTH_SERVICE_URL: http://auth-service:8000
@@ -83,7 +87,7 @@ services:
     healthcheck:
       test: [
         "CMD-SHELL",
-        "celery -A src.celery_tasks.worker.celery_app inspect ping || exit 1"
+        "celery -A summarization_service.src.celery_tasks.worker.celery_app inspect ping || exit 1"
       ]
       interval: 10s
       timeout: 10s

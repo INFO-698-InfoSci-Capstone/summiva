@@ -1,8 +1,8 @@
+from backend.summarization_service.src.core.summarizer import summarize_text
+from backend.summarization_service.src.database.mongo_session import mongo_db
 import celery
 from datetime import datetime
-from backend.summarization_service.src.config.settings import Settings
-from src.core.summarizer import summarize_text
-from src.database.mongo_session import mongo_db
+from ..config.settings import Settings
 from bson.objectid import ObjectId
 
 settings = Settings()
@@ -26,7 +26,7 @@ def run_summarization(doc_id_str: str, raw_text: str):
         {"$set": {
             "summary_text": summary,
             "status": "completed",
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(datetime.timezone.utc)
         }}
     )
     return summary

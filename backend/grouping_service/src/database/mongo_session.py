@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from backend.summarization_service.src.config.settings import Settings
+from ....summarization_service.src.config.settings import Settings
 
 settings = Settings()
 

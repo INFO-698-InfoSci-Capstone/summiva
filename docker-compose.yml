@@ -1,1 +1,103 @@
- 
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/summiva
+      - MONGODB_URL=mongodb://mongodb:27017/summiva
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - db
+      - mongodb
+      - redis
+      - rabbitmq
+    volumes:
+      - ./backend:/app
+      - ./logs:/app/logs
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A celery_tasks.worker.celery_app worker --loglevel=info
+    environment:
+      - PYTHONPATH=/app
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/summiva
+      - MONGODB_URL=mongodb://mongodb:27017/summiva
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - backend
+      - redis
+      - rabbitmq
+    volumes:
+      - ./backend:/app
+      - ./logs:/app/logs
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:14
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=summiva
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:5
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  solr:
+    image: solr:8
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr_data:/var/solr
+    command: solr-precreate summiva
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  rabbitmq_data:
+  solr_data: 

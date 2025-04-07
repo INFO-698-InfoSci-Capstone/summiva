@@ -1,4 +1,4 @@
-from backend.utils.html_processor import get_or_fetch_html
+from ....utils.html_processor import get_or_fetch_html
 
 def get_raw_text(url: str | None, text: str | None) -> str:
     if url:

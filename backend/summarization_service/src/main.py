@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from api.endpoints.summarize import router as summarize_router
+from src.api.endpoints.summarize import router as summarize_router
 
 app = FastAPI(title="Summarization Service (Celery, External Auth)")
 

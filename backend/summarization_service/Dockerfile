@@ -1,27 +1,10 @@
 FROM python:3.11-slim
 
-WORKDIR /app
-
-COPY requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip && pip install -r /app/requirements.txt
-
-COPY . /app
-
-# Set PYTHONPATH to include src for module imports
-ENV PYTHONPATH="/app/src"
-
-EXPOSE 8001
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8001"]
-
-
-# Base image
-FROM python:3.11-slim
-
 # Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     POETRY_VIRTUALENVS_CREATE=false \
-    PYTHONPATH="/app/src"
+    PYTHONPATH="/app:/app/src:/app/utils:/app/summarization_service/src"
 
 # Set work directory
 WORKDIR /app
@@ -48,5 +31,5 @@ EXPOSE 8001
 # Can override with `--env` in docker-compose or command line
 ENV SUMMIVA_ENV=production
 
-CMD ["gunicorn", "-c", "gunicorn_config.py", "src.main:app"]
+CMD ["gunicorn", "-c", "/app/gunicorn_config.py", "src.main:app"]
 

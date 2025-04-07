@@ -4,12 +4,12 @@ from bson.objectid import ObjectId
 from datetime import datetime
 import datetime as dt
 
-from backend.summarization_service.src.models.summary import SummarizeRequest
-from backend.summarization_service.src.config.settings import Settings
-from backend.summarization_service.src.utils.security import get_authenticated_user_id
-from backend.summarization_service.src.services.content_ingestion import get_raw_text
-from backend.summarization_service.src.database.mongo_session import mongo_db
-from backend.summarization_service.src.celery_tasks.worker import run_summarization
+from src.models.summary import SummarizeRequest
+from src.config.settings import Settings
+from src.utils.security import get_authenticated_user_id
+from src.services.content_ingestion import get_raw_text
+from src.database.mongo_session import mongo_db
+from src.celery_tasks.worker import run_summarization
 
 router = APIRouter()
 security = HTTPBearer()
