@@ -1,10 +1,10 @@
- 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: summiva-backend
+  namespace: summiva
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: summiva-backend
@@ -14,16 +14,50 @@ spec:
         app: summiva-backend
     spec:
       containers:
-      - name: backend
-        image: summiva-backend:latest
+      - name: summiva-api
+        image: summiva/backend:latest
         ports:
         - containerPort: 8000
-        envFrom:
-        - secretRef:
-            name: backend-secrets
-        volumeMounts:
-        - name: config-volume
-          mountPath: /app/config
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: summiva-config
+              key: db_host
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: summiva-config
+              key: db_name
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: summiva-secrets
+              key: db_user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: summiva-secrets
+              key: db_password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
       volumes:
       - name: config-volume
         configMap:
@@ -34,11 +68,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: summiva-backend
+  namespace: summiva
 spec:
-  type: ClusterIP
   selector:
     app: summiva-backend
   ports:
-    - protocol: TCP
-      port: 8000
-      targetPort: 8000
+  - port: 80
+    targetPort: 8000
+  type: LoadBalancer

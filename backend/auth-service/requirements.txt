@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-sqlalchemy
-pydantic[email]
-pydantic-settings
-psycopg2-binary
-python-jose
-passlib[bcrypt]
-python-dotenv

@@ -1,103 +1,366 @@
+version: '3.8'
+
+networks:
+  summiva-network:
+    driver: bridge
+
 services:
   backend:
-    build: 
-      context: ./backend
+    build:
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/summiva
-      - MONGODB_URL=mongodb://mongodb:27017/summiva
-      - REDIS_URL=redis://redis:6379/0
-      - RABBITMQ_URL=amqp://rabbitmq:5672
-    depends_on:
-      - db
-      - mongodb
-      - redis
-      - rabbitmq
+      - SERVICE_NAME=backend
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
     volumes:
-      - ./backend:/app
-      - ./logs:/app/logs
-
-  celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: celery -A celery_tasks.worker.celery_app worker --loglevel=info
-    environment:
-      - PYTHONPATH=/app
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/summiva
-      - MONGODB_URL=mongodb://mongodb:27017/summiva
-      - REDIS_URL=redis://redis:6379/0
-      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - ./src/backend:/app
+      - ./data:/app/data
+    networks:
+      - summiva-network
     depends_on:
-      - backend
-      - redis
-      - rabbitmq
-    volumes:
-      - ./backend:/app
-      - ./logs:/app/logs
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
-  frontend:
+  auth:
     build:
-      context: ./frontend
+      context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "8001:8000"
     environment:
-      - API_URL=http://backend:8000
+      - ENVIRONMENT=development
+      - SERVICE_NAME=auth
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./src/backend:/app
+    networks:
+      - summiva-network
     depends_on:
-      - backend
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
-  db:
-    image: postgres:14
+  summarization:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"
+    environment:
+      - ENVIRONMENT=development
+      - SERVICE_NAME=summarization
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+    volumes:
+      - ./src/backend:/app
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  tagging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8000"
+    environment:
+      - ENVIRONMENT=development
+      - SERVICE_NAME=tagging
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+    volumes:
+      - ./src/backend:/app
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  grouping:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8000"
+    environment:
+      - ENVIRONMENT=development
+      - SERVICE_NAME=grouping
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+    volumes:
+      - ./src/backend:/app
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  search:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8000"
+    environment:
+      - ENVIRONMENT=development
+      - SERVICE_NAME=search
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+    volumes:
+      - ./src/backend:/app
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  clustering:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8000"
+    environment:
+      - ENVIRONMENT=development
+      - SERVICE_NAME=clustering
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+    volumes:
+      - ./src/backend:/app
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva}
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=summiva
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-  mongodb:
-    image: mongo:5
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_data:/data/db
+    networks:
+      - summiva-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   redis:
-    image: redis:6
+    image: redis:7
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - summiva-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
-  rabbitmq:
-    image: rabbitmq:3-management
+  mongodb:
+    image: mongo:6
     ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - "27017:27017"
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - mongodb_data:/data/db
+    networks:
+      - summiva-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
-  solr:
-    image: solr:8
+  prometheus:
+    image: prom/prometheus:latest
     ports:
-      - "8983:8983"
+      - "9090:9090"
     volumes:
-      - solr_data:/var/solr
-    command: solr-precreate summiva
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    networks:
+      - summiva-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    depends_on:
+      - backend
+      - auth
+      - summarization
+      - tagging
+      - grouping
+      - search
+      - clustering
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - summiva-network
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
 volumes:
   postgres_data:
-  mongodb_data:
+    driver: local
   redis_data:
-  rabbitmq_data:
-  solr_data: 
+    driver: local
+  mongodb_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local 

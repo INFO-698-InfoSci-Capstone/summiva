@@ -1,188 +1,84 @@
- 
-# **Summiva: AI-Powered NLP System for Summarization, Tagging & Search**  
-### **Enterprise-Grade AI-Powered Text Processing and Search Engine with Flutter UI**  
+# Summiva
 
----
+An Enterprise-Scale NLP System for Content Summarization, Tagging, Grouping, and Search
 
-## **📌 Overview**  
-Summiva is an **AI-powered NLP system** designed for **enterprise-scale document summarization, tagging, grouping, and semantic search**. It integrates **state-of-the-art AI models**, **scalable infrastructure**, and **optimized search indexing** to process and retrieve vast amounts of unstructured text data.  
+## Project Structure
 
-Summiva now features a **Flutter-based UI**, replacing the earlier React frontend, enabling **cross-platform support for Web, Mobile (iOS & Android), and Desktop**.  
-
-This system is **built with industry best practices** following **FAANG-level architecture**, incorporating **FastAPI for backend, Flutter for frontend, PostgreSQL & MongoDB for databases, Apache Solr & FAISS for search indexing, TorchServe for AI model serving, and Kubernetes for scalable deployment**.  
-
----
-
-## **📌 Key Features**  
-✅ **AI-Powered Summarization**: Supports **extractive (TextRank, BERT)** & **abstractive (T5, PEGASUS)** techniques.  
-✅ **Intelligent Tagging & Named Entity Recognition (NER)**: Uses **BERT & SpaCy** for real-time text tagging.  
-✅ **Semantic Grouping & Clustering**: Implements **BERTopic, LDA, and HDBSCAN** for automatic content categorization.  
-✅ **Enterprise-Grade Search Engine**: Combines **Solr-based keyword search** with **FAISS-based semantic retrieval**.  
-✅ **Flutter UI for Web, Mobile, & Desktop**: Write once, deploy anywhere with **Dart & Material 3 components**.  
-✅ **Asynchronous Processing**: Uses **Celery & RabbitMQ** for handling large-scale NLP tasks in the background.  
-✅ **Observability & Monitoring**: Includes **Prometheus, Grafana, and ELK stack** for real-time system insights.  
-✅ **Cloud-Ready & Scalable**: Supports **Kubernetes-based deployment and Terraform for Infrastructure as Code (IaC)**.  
-
----
-
-## **📌 System Architecture**  
-Summiva follows **a modular, microservices-driven architecture**, ensuring **scalability, resilience, and high performance**.  
-
-### **🔹 Backend Architecture**  
-- **FastAPI**: High-performance Python backend for serving APIs.  
-- **TorchServe**: AI model serving for text summarization and tagging.  
-- **PostgreSQL & MongoDB**: Dual database strategy for structured & unstructured data.  
-- **Apache Solr & FAISS**: Combined search indexing for keyword and semantic retrieval.  
-- **Celery & RabbitMQ**: Asynchronous background task processing.  
-- **Redis**: Caching layer for optimizing API performance.  
-
-### **🔹 Frontend Architecture (Flutter)**  
-- **Flutter (Dart)**: Cross-platform UI framework for Web, Mobile (iOS/Android), and Desktop.  
-- **Flutter Riverpod / Bloc**: State management for scalable UI interactions.  
-- **Dio (API Client)**: Efficient networking for backend communication.  
-- **Material 3 / Cupertino UI**: Supports both Android & iOS native UI designs.  
-
-### **🔹 Infrastructure & Deployment**  
-- **Kubernetes**: Container orchestration for microservices.  
-- **Docker & Docker Compose**: Containerized environment setup.  
-- **Terraform**: Infrastructure as Code (IaC) for scalable deployment.  
-- **Prometheus & Grafana**: Monitoring and alerting system.  
-- **ELK Stack (Elasticsearch, Logstash, Kibana)**: Centralized logging.  
-
----
-
-## **📌 Tech Stack**  
-| **Component**          | **Technology Used**          |  
-|-----------------------|-----------------------------|  
-| **Frontend**          | Flutter (Dart, Riverpod, Bloc, Material 3, Cupertino) |  
-| **Backend**           | FastAPI, Python, Celery     |  
-| **AI Model Serving**  | TorchServe, Hugging Face   |  
-| **Databases**         | PostgreSQL, MongoDB        |  
-| **Search Indexing**   | Apache Solr, FAISS         |  
-| **Task Queue**        | Celery, RabbitMQ           |  
-| **Caching**          | Redis                       |  
-| **Infrastructure**    | Kubernetes, Docker, Terraform |  
-| **Monitoring & Logging** | Prometheus, Grafana, ELK Stack |  
-
----
-
-## **📌 Installation & Setup**  
-### **🔹 Prerequisites**  
-Before running the application, ensure the following are installed:  
-- **Python 3.9+**  
-- **Flutter SDK 3.0+**  
-- **Dart 2.17+**  
-- **Docker & Docker Compose**  
-- **PostgreSQL & MongoDB**  
-- **Apache Solr**  
-- **Redis & RabbitMQ**  
-- **TorchServe for AI Model Deployment**  
-
-### **🔹 Backend Setup**  
-```bash
-# Clone the repository
-git clone https://github.com/your-org/summiva.git
-cd summiva/backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # For Mac/Linux
-venv\Scripts\activate      # For Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the FastAPI server
-uvicorn app.main:app --reload
+```
+summiva/
+├── config/                  # Configuration files
+│   ├── development/        # Development environment configs
+│   ├── staging/           # Staging environment configs
+│   └── production/        # Production environment configs
+├── docs/                   # Documentation
+│   ├── api/               # API documentation
+│   ├── architecture/      # System architecture docs
+│   ├── deployment/        # Deployment guides
+│   ├── development/       # Development setup guides
+│   └── user-guides/       # End-user documentation
+├── infra/                  # Infrastructure
+│   ├── kubernetes/        # Kubernetes manifests
+│   ├── terraform/         # Infrastructure as code
+│   └── scripts/           # Deployment scripts
+├── monitoring/            # Monitoring and observability
+│   ├── dashboards/        # Monitoring dashboards
+│   ├── alerts/            # Alert configurations
+│   └── metrics/           # Custom metrics
+├── notebooks/             # Jupyter notebooks
+├── research/              # Research papers and documents
+├── src/                   # Source code
+│   ├── backend/          # Backend services
+│   │   ├── auth_service/
+│   │   ├── celery_tasks/
+│   │   ├── grouping_service/
+│   │   ├── search_service/
+│   │   ├── summarization_service/
+│   │   └── tagging_service/
+│   └── frontend/         # Frontend application
+├── tests/                 # Test suites
+│   ├── unit/             # Unit tests
+│   ├── integration/      # Integration tests
+│   ├── e2e/              # End-to-end tests
+│   └── performance/      # Performance tests
+└── logs/                 # Application logs
 ```
 
-### **🔹 Flutter Frontend Setup**  
-```bash
-cd ../frontend
+## Getting Started
 
-# Install dependencies
-flutter pub get
+### Prerequisites
 
-# Run the Flutter app
-flutter run
-```
+- Python 3.8+
+- Flutter/Dart
+- Docker
+- Kubernetes (for production deployment)
 
-### **🔹 Running with Docker**  
-```bash
-docker-compose up -d
-```
+### Development Setup
 
----
+1. Clone the repository
+2. Set up the backend:
+   ```bash
+   cd src/backend
+   python -m venv .venv
+   source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+   pip install -r requirements.txt
+   ```
 
-## **📌 API Documentation**  
-Summiva follows **RESTful API standards** with **Swagger/OpenAPI documentation**.  
+3. Set up the frontend:
+   ```bash
+   cd src/frontend
+   flutter pub get
+   ```
 
-- **API Docs (Swagger UI):** `http://localhost:8000/docs`  
-- **Health Check API:** `GET /health`  
-- **Summarization API:** `POST /summarize`  
-- **Tagging API:** `POST /tag`  
-- **Grouping API:** `POST /group`  
-- **Search API:** `GET /search?q=<query>`  
+4. Start the development environment:
+   ```bash
+   cd infra
+   docker-compose up -d
+   ```
 
----
+## Contributing
 
-## **📌 Deployment**  
-Summiva supports **cloud and on-premise deployment** with Kubernetes & Docker.  
+Please read [CONTRIBUTING.md](docs/development/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-### **🔹 Kubernetes Deployment**  
-```bash
-kubectl apply -f infra/kubernetes/backend-deployment.yaml
-kubectl apply -f infra/kubernetes/frontend-deployment.yaml
-kubectl apply -f infra/kubernetes/database.yaml
-```
+## License
 
-### **🔹 Terraform for Infrastructure Provisioning**  
-```bash
-cd infra/terraform
-terraform init
-terraform apply
-```
-
----
-
-## **📌 Monitoring & Observability**  
-Summiva is equipped with **enterprise-grade monitoring tools**.  
-
-### **🔹 Start Monitoring Stack**  
-```bash
-# Start Prometheus & Grafana
-docker-compose -f monitoring/docker-compose.yml up -d
-```
-
-- **Prometheus Metrics:** `http://localhost:9090`  
-- **Grafana Dashboards:** `http://localhost:3000`  
-- **ELK Stack:** `http://localhost:5601`  
-
----
-
-## **📌 Roadmap & Future Enhancements**  
-🔹 **Multi-Document Summarization** – Extend Summiva to handle batch document summarization.  
-🔹 **Personalized AI Models** – Train domain-specific models for enhanced accuracy.  
-🔹 **Graph-Based Knowledge Extraction** – Implement knowledge graphs for enhanced information retrieval.  
-🔹 **Cloud-Native Autoscaling** – Deploy using AWS/GCP with horizontal scaling.  
-
----
-
-## **📌 Contribution Guidelines**  
-We welcome contributions to Summiva! To get started:  
-1. **Fork the repository** & create a new branch.  
-2. **Commit your changes** following best practices.  
-3. **Create a pull request (PR)** for review.  
-
----
-## **📌 License**  
-Summiva is released under the **MIT License**.  
-
----
-## **📌 Contact & Support**  
-For questions or issues:  
-📧 **Email:** .  
-📌 **GitHub Issues:** [https://github.com/./summiva/issues](https://github.com/./summiva/issues)  
-
-🚀 **Summiva is now fully Flutter-integrated and open-source!** 🚀  
-Would you like any refinements? 😊
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 

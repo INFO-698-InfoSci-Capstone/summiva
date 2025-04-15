@@ -86,4 +86,43 @@ htmlcov/
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local 
+.env.production.local
+
+# Environment variables and secrets
+.env
+*.env
+secrets.env
+**/secrets/
+**/.secrets/
+
+# Build outputs
+out/
+target/
+*.pyc
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+env/
+.env/
+.virtualenv/
+
+# Flutter/Dart specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+ios/Pods/
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+
+# Local development
+*.local
+.local/
+local.properties 
