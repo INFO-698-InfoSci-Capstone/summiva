@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
-from sqlalchemy.sql import func
-from src.database.session import Base
+from sqlalchemy import func
+from src.backend.auth.database.session import Base
 
 class User(Base):
     """User model for authentication service"""

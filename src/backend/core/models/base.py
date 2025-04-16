@@ -1,15 +1,16 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, Float, Table
-from sqlalchemy.sql import func
-from core.database.database import Base
+from sqlalchemy import Column, Integer, DateTime
+from sqlalchemy import func
+from sqlalchemy.orm import declarative_base
 
+Base = declarative_base()
 class BaseModel(Base):
     """Base model with common fields"""
     __abstract__ = True
-    
+
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
+    
 class User(BaseModel):
     """User model for authentication"""
     __tablename__ = "users"

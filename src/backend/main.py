@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from core.config.settings import settings
-from core.middleware.middleware import setup_middleware
-from core.database.database import init_db, engine, Base
+from src.core.config.settings import settings
+from src.backend.core.middleware.middleware import setup_middleware
+from src.backend.core.database.database import init_db, engine, Base
+from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import generate_latest, REGISTRY
 import logging
 
 # Configure logging
@@ -19,13 +21,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
+instrumentator = Instrumentator()
+
+
 # Setup middleware
 setup_middleware(app)
 
 # Add middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=['http://localhost:3000'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,6 +43,8 @@ async def startup_event():
     init_db()
     # Create database tables
     Base.metadata.create_all(bind=engine)
+    instrumentator.instrument(app)
+
 
 # Health check endpoint
 @app.get("/health")
@@ -45,17 +52,22 @@ async def health_check():
     return {"status": "healthy"}
 
 # Import and include routers
-from apps.auth.routes import router as auth_router
-from apps.summarization.routes import router as summarization_router
-from apps.tagging.routes import router as tagging_router
-from apps.search.routes import router as search_router
-from apps.grouping.routes import router as grouping_router
+from src.apps.auth.routes.auth_routes import router as auth_router
+from src.apps.summarization.routes.summarization_routes import router as summarization_router
+from src.apps.tagging.routes.tagging_routes import router as tagging_router
+from src.apps.search.routes.search_routes import router as search_router
+from src.apps.grouping.routes.grouping_routes import router as grouping_router
 
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(summarization_router, prefix="/api/summarization", tags=["summarization"])
 app.include_router(tagging_router, prefix="/api/tagging", tags=["tagging"])
 app.include_router(search_router, prefix="/api/search", tags=["search"])
 app.include_router(grouping_router, prefix="/api/grouping", tags=["grouping"])
+
+@app.get("/metrics")
+async def metrics():
+    return Response(generate_latest(REGISTRY), media_type="text/plain")
+
 
 @app.get("/")
 async def root():

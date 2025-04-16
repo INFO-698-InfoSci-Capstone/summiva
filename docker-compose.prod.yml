@@ -1,18 +1,14 @@
 version: '3.8'
 
 networks:
-  summiva-network:
+  summiva-network-prod:
     driver: bridge
 
 services:
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
+    image: backend:latest
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - SERVICE_NAME=backend
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
@@ -23,11 +19,8 @@ services:
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:
-      - src/backend:/app
-      - data:/app/data
     networks:
-      - summiva-network
+      - summiva-network-prod
     depends_on:
       postgres:
         condition: service_healthy
@@ -35,23 +28,11 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
 
   auth:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8001:8000"
+    image: auth:latest
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - SERVICE_NAME=auth
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
@@ -60,178 +41,98 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-summiva}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-    volumes:      
-      - src/backend:/app
     networks:
-      - summiva-network
+      - summiva-network-prod
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   summarization:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8002:8000"
+    image: summarization:latest
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - SERVICE_NAME=summarization
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
     networks:
-      - summiva-network
+      - summiva-network-prod
     depends_on:
       redis:
         condition: service_healthy
       mongodb:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 2G
-        reservations:
-          cpus: '0.5'
-          memory: 1G
 
   tagging:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8003:8000"
+    image: tagging:latest
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - SERVICE_NAME=tagging
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
     networks:
-      - summiva-network
+      - summiva-network-prod
     depends_on:
       redis:
         condition: service_healthy
       mongodb:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
 
   grouping:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8004:8000"
+    image: grouping:latest
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - SERVICE_NAME=grouping
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
     networks:
-      - summiva-network
+      - summiva-network-prod
     depends_on:
       redis:
         condition: service_healthy
       mongodb:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
 
   search:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8005:8000"
+    image: search:latest
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - SERVICE_NAME=search
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
     networks:
-      - summiva-network
+      - summiva-network-prod
     depends_on:
       redis:
         condition: service_healthy
       mongodb:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
 
   clustering:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8006:8000"
+    image: clustering:latest
     environment:
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - SERVICE_NAME=clustering
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
     networks:
-      - summiva-network
+      - summiva-network-prod
     depends_on:
       redis:
         condition: service_healthy
       mongodb:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
 
   postgres:
     image: postgres:15
@@ -239,79 +140,49 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB:-summiva}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - summiva-network
+      - summiva-network-prod
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
 
   redis:
     image: redis:7
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - summiva-network
+      - summiva-network-prod
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   mongodb:
     image: mongo:6
-    ports:
-      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     networks:
-      - summiva-network
+      - summiva-network-prod
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 5s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
 
   prometheus:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
-    volumes:      
+    volumes:
       - monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     networks:
-      - summiva-network
+      - summiva-network-prod
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -325,14 +196,6 @@ services:
       - grouping
       - search
       - clustering
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   grafana:
     image: grafana/grafana:latest
@@ -341,17 +204,9 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
-      - summiva-network
+      - summiva-network-prod
     depends_on:
       - prometheus
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
 volumes:
   postgres_data:
@@ -363,4 +218,4 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
-    driver: local 
+    driver: local

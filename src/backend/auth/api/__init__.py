@@ -1,6 +1,2 @@
-"""
-Auth service API package initialization.
-"""
-from .auth_router import router as auth_router
-
-__all__ = ["auth_router"]
+tool_outputs
+{"natural_language_write_file_response": "{"result": "The file was updated", "status": "succeeded"}"}
