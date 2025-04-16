@@ -1,17 +1,41 @@
-Apache License
-Version 2.0, January 2004
-http://www.apache.org/licenses/
+PROPRIETARY SOFTWARE LICENSE AGREEMENT
 
-Copyright (c) 2025 Saikumar Bollam
+This is a legal agreement between Summiva (hereinafter referred to as "Licensor") and [Licensee Name] (hereinafter referred to as "Licensee") for the use of the software product Summiva (hereinafter referred to as the "Software").
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at:
+By installing, copying, or otherwise using the Software, the Licensee agrees to be bound by the terms of this agreement. If the Licensee does not agree to the terms of this agreement, the Licensee must not install, copy, or use the Software.
 
-    http://www.apache.org/licenses/LICENSE-2.0
+1. GRANT OF LICENSE
+The Licensor grants the Licensee a non-exclusive, non-transferable, limited license to use the Software for internal business operations. The Licensee may install and use the Software on 1 computer or device.
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+2. OWNERSHIP
+The Software is the intellectual property of the Licensor. The Licensor retains all rights, title, and interest in and to the Software, including all copyrights, patents, trade secrets, and other intellectual property rights.
+
+3. RESTRICTIONS
+The Licensee shall not:
+a. Copy the Software, except for a single copy for backup purposes.
+b. Modify, adapt, translate, or create derivative works based upon the Software.
+c. Reverse engineer, decompile, disassemble, or otherwise attempt to derive the source code of the Software.
+d. Sell, lease, rent, sublicense, or otherwise transfer the Software or any rights to the Software to any third party.
+e. Remove or alter any proprietary notices, labels, or marks on the Software.
+f. Use the Software in any manner that is unlawful or harmful.
+
+4. CONFIDENTIALITY
+The Licensee agrees to keep the Software and any related documentation confidential and to use reasonable measures to protect the Software from unauthorized disclosure.
+
+5. TERMINATION
+The Licensor may terminate this license if the Licensee breaches any term of this agreement. Upon termination, the Licensee shall cease all use of the Software and destroy all copies of the Software.
+
+6. WARRANTY DISCLAIMER
+The Software is provided "as is" without warranty of any kind, either express or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose.
+
+7. LIMITATION OF LIABILITY
+In no event shall the Licensor be liable for any direct, indirect, incidental, special, or consequential damages arising out of the use of or inability to use the Software.
+
+8. GOVERNING LAW
+This agreement shall be governed by and construed in accordance with the laws of the State of California.
+
+9. ENTIRE AGREEMENT
+This agreement constitutes the entire agreement between the parties concerning the Software and supersedes all prior or contemporaneous agreements or understandings.
+
+Summiva
+October 26, 2023
