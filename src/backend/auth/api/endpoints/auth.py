@@ -1,18 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Security, status
-from src.backend.auth.database.database import get_db
-from src.backend.auth.core.auth_logic import (
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from backend.auth.database.database import get_db
+from backend.auth.core.auth_logic import (
     verify_password, get_password_hash, create_access_token, create_refresh_token,
     decode_access_token
 )
-from src.backend.auth.schemas.user_schemas import UserCreate, UserRead, Token, RefreshToken
-
-
+from backend.auth.schemas.user_schemas import UserCreate, UserRead, Token, RefreshToken
 
 router = APIRouter(tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
-
-from src.backend.auth.models.user import User
+from backend.auth.models.user import User
 @router.post("/register", response_model=UserRead)
 def register(user: UserCreate, db: Session = Depends(get_db)) -> UserRead:
     try:

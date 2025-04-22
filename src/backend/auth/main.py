@@ -1,5 +1,5 @@
-from src.backend.auth.api.endpoints.auth import router as auth_router
-from src.core.config.settings import settings
+from auth.api.endpoints.auth import router as auth_router
+from core.config.settings import settings
 from fastapi import FastAPI, Response, Depends
 from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_client import generate_latest, REGISTRY
@@ -21,7 +21,7 @@ app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 
 @app.get("/health")
 async def health_check():
-    \"\"\"Health check endpoint\"\"\"
+    """Health check endpoint"""
     return {"status": "healthy", "service": settings.APP_SERVICE_NAME}
 
 

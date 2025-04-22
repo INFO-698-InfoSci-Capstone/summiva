@@ -23,17 +23,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python dependencies
 COPY src/backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir gunicorn
+RUN pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir gunicorn uvicorn
 
 # Copy project files (codebase)
 COPY src/backend /app
 
-# Copy the entrypoint script
-COPY src/backend/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh && chown appuser:appuser /app/entrypoint.sh
-
 # Create expected service directories and assign ownership
 RUN mkdir -p /app/data /app/logs /app/models \
+    && mkdir -p /app/exclude_patterns \
+    && echo "postgresql/data" > /app/exclude_patterns/reload_exclude.txt \
     && chown -R appuser:appuser /app
 
 # Switch to non-root user
@@ -46,5 +44,14 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Start the correct service based on SERVICE_NAME
-ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
+# Direct command instead of entrypoint script
+CMD ["sh", "-c", "\
+    if [ \"$SERVICE_NAME\" = \"backend\" ]; then \
+        cd /app && uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-exclude \"./postgresql/data/*\" --reload-exclude \"./data/*\" --reload-exclude \"*.pyc\" --reload-exclude \"./__pycache__\"; \
+    elif [ \"$SERVICE_NAME\" = \"auth\" ]; then \
+        cd /app && uvicorn auth.main:app --host 0.0.0.0 --port 8000 --reload --reload-exclude \"./postgresql/data/*\" --reload-exclude \"./data/*\" --reload-exclude \"*.pyc\" --reload-exclude \"./__pycache__\"; \
+    elif [ \"$SERVICE_NAME\" = \"summarization\" ]; then \
+        cd /app && uvicorn summarization.main:app --host 0.0.0.0 --port 8000 --reload --reload-exclude \"./postgresql/data/*\" --reload-exclude \"./data/*\" --reload-exclude \"*.pyc\" --reload-exclude \"./__pycache__\"; \
+    else \
+        cd /app && uvicorn ${SERVICE_NAME}.main:app --host 0.0.0.0 --port 8000 --reload --reload-exclude \"./postgresql/data/*\" --reload-exclude \"./data/*\" --reload-exclude \"*.pyc\" --reload-exclude \"./__pycache__\"; \
+    fi"]

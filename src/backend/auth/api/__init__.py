@@ -1,2 +1,7 @@
-tool_outputs
-{"natural_language_write_file_response": "{"result": "The file was updated", "status": "succeeded"}"}
+# Authentication API module
+"""This module contains the API endpoints for authentication"""
+
+# Export routes
+from backend.auth.api.endpoints import auth
+
+__all__ = ["auth"]
