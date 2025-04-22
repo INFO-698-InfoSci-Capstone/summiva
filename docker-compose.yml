@@ -1,10 +1,21 @@
-version: '3.8'
-
 networks:
   summiva-network:
     driver: bridge
 
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
 services:
+
   backend:
     build:
       context: .
@@ -16,16 +27,16 @@ services:
       - SERVICE_NAME=backend
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DB:-summiva}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
     volumes:
-      - src/backend:/app
-      - data:/app/data
+      - ./src/backend:/app
+      - ./data:/app/data
     networks:
       - summiva-network
     depends_on:
@@ -35,6 +46,8 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+    labels:
+      - "com.summiva.service=backend"
     deploy:
       resources:
         limits:
@@ -55,13 +68,13 @@ services:
       - SERVICE_NAME=auth
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DB:-summiva}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-    volumes:      
-      - src/backend:/app
+    volumes:
+      - ./src/backend:/app
     networks:
       - summiva-network
     depends_on:
@@ -69,6 +82,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    labels:
+      - "com.summiva.service=auth"
     deploy:
       resources:
         limits:
@@ -91,8 +106,8 @@ services:
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
+    volumes:
+      - ./src/backend:/app
     networks:
       - summiva-network
     depends_on:
@@ -100,6 +115,8 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+    labels:
+      - "com.summiva.service=summarization"
     deploy:
       resources:
         limits:
@@ -122,8 +139,8 @@ services:
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
+    volumes:
+      - ./src/backend:/app
     networks:
       - summiva-network
     depends_on:
@@ -131,6 +148,8 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+    labels:
+      - "com.summiva.service=tagging"
     deploy:
       resources:
         limits:
@@ -153,8 +172,8 @@ services:
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
+    volumes:
+      - ./src/backend:/app
     networks:
       - summiva-network
     depends_on:
@@ -162,6 +181,8 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+    labels:
+      - "com.summiva.service=grouping"
     deploy:
       resources:
         limits:
@@ -184,8 +205,8 @@ services:
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
+    volumes:
+      - ./src/backend:/app
     networks:
       - summiva-network
     depends_on:
@@ -193,6 +214,8 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+    labels:
+      - "com.summiva.service=search"
     deploy:
       resources:
         limits:
@@ -215,8 +238,8 @@ services:
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
-    volumes:      
-      - src/backend:/app
+    volumes:
+      - ./src/backend:/app
     networks:
       - summiva-network
     depends_on:
@@ -224,6 +247,8 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+    labels:
+      - "com.summiva.service=clustering"
     deploy:
       resources:
         limits:
@@ -236,8 +261,8 @@ services:
   postgres:
     image: postgres:15
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
       - POSTGRES_DB=${POSTGRES_DB:-summiva}
     ports:
       - "5432:5432"
@@ -246,18 +271,10 @@ services:
     networks:
       - summiva-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
 
   redis:
     image: redis:7
@@ -272,14 +289,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   mongodb:
     image: mongo:6
@@ -294,21 +303,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
 
   prometheus:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
-    volumes:      
-      - monitoring/prometheus:/etc/prometheus
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     networks:
       - summiva-network
@@ -317,22 +318,6 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-    depends_on:
-      - backend
-      - auth
-      - summarization
-      - tagging
-      - grouping
-      - search
-      - clustering
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   grafana:
     image: grafana/grafana:latest
@@ -344,23 +329,3 @@ services:
       - summiva-network
     depends_on:
       - prometheus
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  mongodb_data:
-    driver: local
-  prometheus_data:
-    driver: local
-  grafana_data:
-    driver: local 
