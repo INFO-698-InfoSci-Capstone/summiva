@@ -1,11 +1,14 @@
 # Use Python 3.11 slim base
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Create a non-root user
 RUN useradd -m -u 1000 appuser
 
 # Set working directory
 WORKDIR /app
+
+# Create missing __init__.py in all folders
+RUN find . -type d ! -exec test -e {}/__init__.py \; -exec touch {}/__init__.py \;
 
 # Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
