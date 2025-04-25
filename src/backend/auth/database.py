@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.core.config.settings import settings
+from config.settings import settings
 
 # Create database engine
 engine = create_engine(\
@@ -13,9 +13,9 @@ engine = create_engine(\
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
-    """Get database session"""\
-    db = SessionLocal()\
-    try:\
-        yield db\
-    finally:\
+    """Get database session"""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
         db.close()

@@ -1,5 +1,5 @@
-from auth.api.endpoints.auth import router as auth_router
-from core.config.settings import settings
+from src.backend.auth.api.endpoints.auth import router as auth_router
+from src.backend.core.config.settings import settings
 from fastapi import FastAPI, Response, Depends
 from prometheus_fastapi_instrumentator import Instrumentator
 from prometheus_client import generate_latest, REGISTRY

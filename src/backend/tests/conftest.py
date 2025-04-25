@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.core.config.settings import settings
+from config.settings import settings
 from src.backend.auth.database.database import get_db, SessionLocal
 
 

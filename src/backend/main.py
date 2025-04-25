@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from src.core.config.settings import settings
+from core.config.settings import settings
 from src.backend.core.middleware.middleware import setup_middleware
 from src.backend.core.database.database import init_db, engine, Base
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -71,4 +71,4 @@ async def metrics():
 
 @app.get("/")
 async def root():
-    return {"message": "Document Grouping API is running"} 
+    return {"message": "Document Grouping API is running"}

@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import Any
 
-from core.database.database import get_db
-from core.config.settings import settings
-from core.models.base import User
+from src.backend.core.database.database import get_db
+from src.backend.core.config.settings import settings
+from src.backend.core.models.base import User
 from .schemas import UserCreate, UserInDB, Token
 from .utils import (
     get_password_hash,

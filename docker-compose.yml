@@ -35,8 +35,8 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
     volumes:
-      - ./src/backend:/app
-      - ./data:/app/data
+      - ./src:/app/src
+      - ./data:/app/src/data
     networks:
       - summiva-network
     depends_on:
@@ -74,7 +74,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     volumes:
-      - ./src/backend:/app
+      - ./src:/app/src
     networks:
       - summiva-network
     depends_on:
@@ -107,7 +107,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
     volumes:
-      - ./src/backend:/app
+      - ./src:/app/src
     networks:
       - summiva-network
     depends_on:
@@ -140,7 +140,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
     volumes:
-      - ./src/backend:/app
+      - ./src:/app/src
     networks:
       - summiva-network
     depends_on:
@@ -173,7 +173,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
     volumes:
-      - ./src/backend:/app
+      - ./src:/app/src
     networks:
       - summiva-network
     depends_on:
@@ -206,7 +206,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
     volumes:
-      - ./src/backend:/app
+      - ./src:/app/src
     networks:
       - summiva-network
     depends_on:
@@ -239,7 +239,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
     volumes:
-      - ./src/backend:/app
+      - ./src:/app/src
     networks:
       - summiva-network
     depends_on:

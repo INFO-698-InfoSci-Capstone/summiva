@@ -10,6 +10,7 @@ services:
     environment:
       - ENVIRONMENT=production
       - SERVICE_NAME=backend
+      - PYTHONPATH=/app/src
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_USER=${POSTGRES_USER}
@@ -34,6 +35,7 @@ services:
     environment:
       - ENVIRONMENT=production
       - SERVICE_NAME=auth
+      - PYTHONPATH=/app/src
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_USER=${POSTGRES_USER}
@@ -54,6 +56,7 @@ services:
     environment:
       - ENVIRONMENT=production
       - SERVICE_NAME=summarization
+      - PYTHONPATH=/app/src
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
@@ -71,6 +74,7 @@ services:
     environment:
       - ENVIRONMENT=production
       - SERVICE_NAME=tagging
+      - PYTHONPATH=/app/src
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
@@ -88,6 +92,7 @@ services:
     environment:
       - ENVIRONMENT=production
       - SERVICE_NAME=grouping
+      - PYTHONPATH=/app/src
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
@@ -105,6 +110,7 @@ services:
     environment:
       - ENVIRONMENT=production
       - SERVICE_NAME=search
+      - PYTHONPATH=/app/src
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
@@ -122,6 +128,7 @@ services:
     environment:
       - ENVIRONMENT=production
       - SERVICE_NAME=clustering
+      - PYTHONPATH=/app/src
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
@@ -179,7 +186,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - monitoring/prometheus:/etc/prometheus
+      - ./monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     networks:
       - summiva-network-prod
