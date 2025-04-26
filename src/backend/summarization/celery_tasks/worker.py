@@ -1,8 +1,8 @@
 import celery
 from datetime import datetime
-from backend.summarization_service.src.config.settings import Settings
-from src.core.summarizer import summarize_text
-from src.database.mongo_session import mongo_db
+from src.backend.summarization.config.settings import Settings
+from src.backend.summarization.core.summarizer import summarize_text
+from src.backend.summarization.database.mongo_session import mongo_db
 from bson.objectid import ObjectId
 
 settings = Settings()

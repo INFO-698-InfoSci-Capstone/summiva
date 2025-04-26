@@ -1,14 +1,11 @@
-# Use Python 3.11 slim base
-FROM python:3.13-slim
+# Use Python 3.12 slim base (more stable)
+FROM python:3.12-slim
 
 # Create a non-root user
 RUN useradd -m -u 1000 appuser
 
 # Set working directory
 WORKDIR /app
-
-# Create missing __init__.py in all folders
-RUN find . -type d ! -exec test -e {}/__init__.py \; -exec touch {}/__init__.py \;
 
 # Environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -28,10 +25,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY src/backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir gunicorn uvicorn
 
-# Copy only src directory to maintain the new structure
+# Copy the source code
 COPY src /app/src
 
-# Create expected service directories and assign ownership
+# Create missing __init__.py files
+RUN find /app/src -type d ! -exec test -e {}/__init__.py \; -exec touch {}/__init__.py \;
+
+# Create service directories
 RUN mkdir -p /app/src/data /app/src/logs /app/src/models \
     && mkdir -p /app/src/exclude_patterns \
     && echo "postgresql/data" > /app/src/exclude_patterns/reload_exclude.txt \
@@ -47,7 +47,7 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Direct command instead of entrypoint script
+# Default command
 CMD ["sh", "-c", "\
     if [ \"$SERVICE_NAME\" = \"backend\" ]; then \
         cd /app/src && uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload --reload-exclude \"./postgresql/data/*\" --reload-exclude \"./data/*\" --reload-exclude \"*.pyc\" --reload-exclude \"./__pycache__\"; \

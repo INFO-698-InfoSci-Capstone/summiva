@@ -2,7 +2,7 @@
 
 import logging
 import sys
-from backend.summarization_service.src.config.settings import settings
+from backend.summarization.config.settings import settings
 
 def setup_logger(name: str = "summiva"):
     logger = logging.getLogger(name)
