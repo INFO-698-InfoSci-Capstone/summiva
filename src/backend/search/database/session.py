@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from core.config.settings import settings
+
+from config.settings.settings import settings
 
 # Create SQLAlchemy engine for search service
 engine = create_engine(

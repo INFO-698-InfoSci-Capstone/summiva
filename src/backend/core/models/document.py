@@ -1,13 +1,9 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
-from src.backend.core.database.database import Base
+from backend.core.models.base import BaseModel
+from sqlalchemy import Column, String, Text
 
-class Document(Base):
+class Document(BaseModel):
     __tablename__ = "documents"
 
-    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, index=True)  # Reference to auth service
     title = Column(String, index=True)
-    content = Column(String, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-
-    user = relationship("User", back_populates="documents")
+    content = Column(Text)

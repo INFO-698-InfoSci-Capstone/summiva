@@ -4,7 +4,8 @@ from typing import List
 from celery import Celery
 
 from core.database.database import get_db
-from core.config.settings import settings
+
+from config.settings.settings import settings
 from apps.auth.utils import get_current_user
 from apps.auth.models import User
 from .models import Tag, TaggedDocument

@@ -1,3 +1,5 @@
+![Summiva Logo](assets/summiva-logo.png)
+
 ## Overview
 
 Summiva is an enterprise-scale NLP system designed for content summarization, tagging, grouping, and search.

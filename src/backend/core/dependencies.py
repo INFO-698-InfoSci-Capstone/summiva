@@ -1,48 +1,47 @@
-from typing import Generator
-from fastapi import Depends
-from core.api.auth_client import AuthAPIClient
-from core.api.document_client import DocumentAPIClient
-from core.api.search_client import SearchAPIClient
-from core.api.tagging_client import TaggingAPIClient
-from core.api.grouping_client import GroupingAPIClient
-from core.message_queue import MessageQueue
+from typing import AsyncGenerator
+from src.backend.core.api_client.auth_client import AuthAPIClient
+from src.backend.core.api_client.document_client import DocumentAPIClient
+from src.backend.core.api_client.search_client import SearchAPIClient
+from src.backend.core.api_client.tagging_client import TaggingAPIClient
+from src.backend.core.api_client.grouping_client import GroupingAPIClient
+from src.backend.core.message_queue import MessageQueue
 
-async def get_auth_client() -> Generator[AuthAPIClient, None, None]:
+async def get_auth_client() -> AsyncGenerator[AuthAPIClient, None]:
     client = AuthAPIClient()
     try:
         yield client
     finally:
         await client.close()
 
-async def get_document_client() -> Generator[DocumentAPIClient, None, None]:
+async def get_document_client() -> AsyncGenerator[DocumentAPIClient, None]:
     client = DocumentAPIClient()
     try:
         yield client
     finally:
         await client.close()
 
-async def get_search_client() -> Generator[SearchAPIClient, None, None]:
+async def get_search_client() -> AsyncGenerator[SearchAPIClient, None]:
     client = SearchAPIClient()
     try:
         yield client
     finally:
         await client.close()
 
-async def get_tagging_client() -> Generator[TaggingAPIClient, None, None]:
+async def get_tagging_client() -> AsyncGenerator[TaggingAPIClient, None]:
     client = TaggingAPIClient()
     try:
         yield client
     finally:
         await client.close()
 
-async def get_grouping_client() -> Generator[GroupingAPIClient, None, None]:
+async def get_grouping_client() -> AsyncGenerator[GroupingAPIClient, None]:
     client = GroupingAPIClient()
     try:
         yield client
     finally:
         await client.close()
 
-async def get_message_queue() -> Generator[MessageQueue, None, None]:
+async def get_message_queue() -> AsyncGenerator[MessageQueue, None]:
     mq = MessageQueue()
     await mq.connect()
     try:

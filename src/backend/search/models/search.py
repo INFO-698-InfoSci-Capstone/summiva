@@ -1,34 +1,23 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey
-from sqlalchemy.sql import func
-from src.database.session import Base
+from backend.core.models.base import BaseModel
+from sqlalchemy import Column, Integer, String, Text, Float
 
-class SearchIndex(Base):
-    """Search index model for search service"""
+class SearchIndex(BaseModel):
     __tablename__ = "search_indices"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    document_id = Column(String, index=True)  # Reference to document service
-    vector = Column(Text)  # Store vectorized representation
-    content = Column(Text)  # Store processed content for search
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-class SearchHistory(Base):
-    """Search history model for search service"""
+    document_id = Column(String, index=True)  # Reference to document service
+    vector = Column(Text)
+    content = Column(Text)
+
+class SearchHistory(BaseModel):
     __tablename__ = "search_history"
-    
-    id = Column(Integer, primary_key=True, index=True)
+
     user_id = Column(String, index=True)  # Reference to auth service
     query = Column(Text)
     results_count = Column(Integer)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-class SearchResult(Base):
-    """Search result model for search service"""
+class SearchResult(BaseModel):
     __tablename__ = "search_results"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    search_id = Column(Integer, ForeignKey("search_history.id"))
-    document_id = Column(String, index=True)  # Reference to document service
+
+    search_id = Column(Integer, index=True)  # Reference to search_history
+    document_id = Column(String, index=True)
     relevance_score = Column(Float)
-    created_at = Column(DateTime(timezone=True), server_default=func.now()) 

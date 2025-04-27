@@ -3,8 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import Any
-
-from config.settings import settings
+from config.settings.settings import settings
 from src.backend.auth.database.database import get_db
 from src.backend.auth.models.user import User
 from src.backend.auth.models.token import RefreshToken as RefreshTokenDB  # DB model for refresh tokens

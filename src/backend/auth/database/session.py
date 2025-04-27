@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from src.backend.core.config.settings import settings
+from config.settings.settings import settings
 
 # Create SQLAlchemy engine for auth service
 engine = create_engine(
