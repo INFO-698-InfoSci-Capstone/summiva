@@ -1,0 +1,11 @@
+ 
+cluster.name: "summiva-cluster"
+node.name: "node-1"
+network.host: 0.0.0.0
+http.port: 9200
+
+discovery.type: single-node
+
+# Optional: reduce memory use for dev
+xpack.security.enabled: false
+xpack.monitoring.collection.enabled: true

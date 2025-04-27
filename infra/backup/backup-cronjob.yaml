@@ -1,0 +1,87 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-backup
+  namespace: summiva
+spec:
+  schedule: "0 2 * * *"  # Run at 2 AM every day
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: postgres:13
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Create backup
+              pg_dump -h $(DB_HOST) -U $(DB_USER) -d $(DB_NAME) | gzip > /backup/backup-$(date +%Y%m%d-%H%M%S).sql.gz
+              
+              # Verify backup
+              if ! gunzip -t /backup/backup-$(date +%Y%m%d-%H%M%S).sql.gz; then
+                echo "Backup verification failed"
+                exit 1
+              fi
+              
+              # Upload to S3
+              aws s3 cp /backup/*.gz s3://$(S3_BUCKET)/database-backups/
+              
+              # Clean up old backups (keep last 30 days)
+              aws s3 ls s3://$(S3_BUCKET)/database-backups/ | sort -r | awk 'NR>30' | while read -r line; do
+                aws s3 rm s3://$(S3_BUCKET)/database-backups/$(echo $line | awk '{print $4}')
+              done
+              
+              # Clean local backup
+              rm -f /backup/*.gz
+            env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: backup-config
+                  key: db_host
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: backup-config
+                  key: db_name
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: backup-secrets
+                  key: db_user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backup-secrets
+                  key: db_password
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backup-secrets
+                  key: db_password
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: backup-config
+                  key: s3_bucket
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-secrets
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-secrets
+                  key: aws_secret_access_key
+            volumeMounts:
+            - name: backup-volume
+              mountPath: /backup
+          volumes:
+          - name: backup-volume
+            emptyDir: {}
+          restartPolicy: OnFailure 

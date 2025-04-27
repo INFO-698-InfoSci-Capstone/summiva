@@ -1,1 +1,33 @@
  
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: summiva-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: summiva-frontend
+  template:
+    metadata:
+      labels:
+        app: summiva-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: summiva-frontend:latest
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: summiva-frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: summiva-frontend
+  ports:
+    - port: 80
+      targetPort: 80

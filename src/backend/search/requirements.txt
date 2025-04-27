@@ -1,0 +1,25 @@
+fastapi
+uvicorn
+pydantic[email]
+requests
+
+# Mongo
+pymongo
+
+# Celery + RabbitMQ
+celery
+
+# Transformers Summarization
+transformers
+torch
+
+# Dotenv
+python-dotenv
+
+# Testing
+pytest
+httpx
+pytest-cov
+
+gunicorn
+elasticsearch

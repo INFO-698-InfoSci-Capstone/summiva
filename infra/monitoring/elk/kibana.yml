@@ -1,0 +1,7 @@
+ 
+server.name: "kibana"
+server.host: "0.0.0.0"
+elasticsearch.hosts: ["http://localhost:9200"]
+
+# Optional: disable security for dev
+xpack.security.enabled: false

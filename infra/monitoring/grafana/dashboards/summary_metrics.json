@@ -1,0 +1,49 @@
+ 
+{
+    "dashboard": {
+      "id": null,
+      "uid": "summiva-summary",
+      "title": "Summiva Summary Metrics",
+      "timezone": "browser",
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Cluster CPU Usage",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{image!=\"\"}[5m]))",
+              "format": "time_series"
+            }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Memory Usage",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum(container_memory_usage_bytes{image!=\"\"}) / (1024*1024*1024)",
+              "format": "time_series"
+            }
+          ],
+          "unit": "gigabytes"
+        },
+        {
+          "type": "stat",
+          "title": "Pod Count",
+          "gridPos": { "x": 0, "y": 4, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "count(kube_pod_info)",
+              "format": "time_series"
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 37,
+      "version": 1
+    },
+    "overwrite": true
+  }
+  

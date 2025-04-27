@@ -1,0 +1,102 @@
+[project]
+name = "summiva"
+version = "0.1.0"
+description = "Enterprise-scale NLP system"
+authors = [{ name = "Saikumar Bollam", email = "saikumar@arizona.edu" }]
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+
+dependencies = [
+    "fastapi>=0.68.0",
+    "uvicorn[standard]>=0.15.0",
+    "pydantic>=1.8.2",
+    "requests>=2.26.0",
+    "celery>=5.1.2",
+    "pymongo>=3.12.0",
+    "python-dotenv>=0.19.0",
+    "bson>=0.5.10",
+    "redis>=3.5.3",
+    "transformers>=4.9.2",
+    "scikit-learn>=0.24.2",
+    "spacy>=3.1.0",
+    "bertopic>=0.9.0",
+    "sentence-transformers>=2.0.0",
+    "elasticsearch>=7.13.0",
+    "faiss-cpu>=1.7.1",
+    "gunicorn>=20.1.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.2.5",
+    "pytest-asyncio>=0.15.1",
+    "httpx>=0.19.0",
+    "black>=21.7b0",
+    "isort>=5.9.3",
+    "ruff>=0.0.241",
+    "pre-commit>=2.15.0",
+    "mypy>=0.910",
+    "types-requests>=2.26.0"
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.poetry]
+name = "summiva-backend"
+version = "0.1.0"
+description = "Enterprise-Scale NLP System for Content Summarization"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.68.0"
+uvicorn = "^0.15.0"
+sqlalchemy = "^1.4.23"
+pydantic = "^1.8.2"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.5"
+celery = "^5.1.2"
+redis = "^3.5.3"
+prometheus-client = "^0.11.0"
+torch = "^1.9.0"
+transformers = "^4.9.2"
+faiss-cpu = "^1.7.1"
+psycopg2-binary = "^2.9.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^6.2.5"
+pytest-cov = "^2.12.1"
+pytest-asyncio = "^0.15.1"
+black = "^21.7b0"
+flake8 = "^3.9.2"
+mypy = "^0.910"
+isort = "^5.9.3"
+pre-commit = "^2.15.0"
+httpx = "^0.19.0"
+faker = "^8.12.1"
+factory-boy = "^3.2.0"
