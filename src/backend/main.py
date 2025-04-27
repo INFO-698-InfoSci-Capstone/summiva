@@ -19,15 +19,14 @@ from prometheus_client import generate_latest, REGISTRY
 # -----------------------
 # Internal Modules
 # -----------------------
-
 from config.logs.logging import setup_logging
-from src.backend.auth.api import auth_api
-from src.backend.search.api import search_api
-from src.backend.tagging.api import tagging_api
-from src.backend.grouping.api import grouping_api
-from src.backend.summarization.api import summarization_api
-from src.backend.core.middleware.core_middleware import setup_middlewares
-from src.backend.core.database.database import init_db, engine, Base
+from backend.auth.api import auth_api
+from backend.search.api import search_api
+from backend.tagging.api import tagging_api
+from backend.grouping.api import grouping_api
+from backend.summarization.api import summarization_api
+from backend.core.middleware.core_middleware import setup_middlewares
+from backend.core.database.database import init_db, engine, Base
 from config.settings.settings import settings
 
 # -----------------------
@@ -39,9 +38,9 @@ logger = setup_logging()
 # App Initialization
 # -----------------------
 app = FastAPI(
-    title="Document Grouping API",
-    description="API for grouping documents using various algorithms",
-    version="1.0.0",
+    title=f"{settings.APP_NAME} API",
+    description=f"Enterprise-scale NLP system for content summarization, tagging, grouping, and search",
+    version=settings.APP_SERVICE_VERSION,
 )
 
 instrumentator = Instrumentator()
@@ -53,10 +52,10 @@ setup_middlewares(app)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=settings.CORS_ALLOW_METHODS,
+    allow_headers=settings.CORS_ALLOW_HEADERS,
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -82,10 +81,10 @@ async def startup_event():
     else:
         logger.info(f"Healthy services at startup: {list(healthy_services.keys())}")
     
-     # Connect to Message Queue (via dependency)
-    global message_queue_context
-    message_queue_context = get_message_queue()
-    await message_queue_context.__anext__()
+    # Connect to Message Queue
+    global message_queue
+    message_queue = MessageQueue()
+    await message_queue.connect()
     logger.info("MessageQueue connected at startup.")
 
 
@@ -120,6 +119,7 @@ app.include_router(grouping_api, prefix="/api/grouping", tags=["Grouping"])
 @app.on_event("shutdown")
 async def shutdown_event():
     # Disconnect from Message Queue
-    message_queue = MessageQueue()
-    await message_queue.close()
-    logger.info("MessageQueue disconnected at shutdown.")
+    global message_queue
+    if message_queue:
+        await message_queue.close()
+        logger.info("MessageQueue disconnected at shutdown.")

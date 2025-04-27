@@ -11,6 +11,7 @@ import logging
 import time
 
 from config.settings.settings import settings
+from backend.core.middleware.security_middleware import InputValidationMiddleware, APISecurityMiddleware
 from core.security.auth_backend import JWTAuthBackend  # you probably have this
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 # 3. Setup all Middleware
 # ---------------------------
 def setup_middlewares(app: FastAPI, redis_client=None) -> None:
+    # Input validation (add this first to validate incoming requests)
+    app.add_middleware(InputValidationMiddleware)
+    
+    # API Security 
+    app.add_middleware(APISecurityMiddleware)
+    
     # CORS
     app.add_middleware(
         CORSMiddleware,
@@ -90,23 +97,25 @@ def setup_middlewares(app: FastAPI, redis_client=None) -> None:
     )
     
     # Trusted Host
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=settings.ALLOWED_HOSTS,
-    )
+    if hasattr(settings, 'ALLOWED_HOSTS'):
+        app.add_middleware(
+            TrustedHostMiddleware,
+            allowed_hosts=settings.ALLOWED_HOSTS,
+        )
 
     # GZIP Compression
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     
     # Sessions
-    app.add_middleware(
-        SessionMiddleware,
-        secret_key=settings.SECRET_KEY,
-        session_cookie="summiva_session",
-        max_age=3600,
-        same_site="lax",
-        https_only=settings.USE_HTTPS,
-    )
+    if hasattr(settings, 'SECRET_KEY') and hasattr(settings, 'USE_HTTPS'):
+        app.add_middleware(
+            SessionMiddleware,
+            secret_key=settings.SECRET_KEY,
+            session_cookie="summiva_session",
+            max_age=3600,
+            same_site="lax",
+            https_only=settings.USE_HTTPS,
+        )
 
     # Authentication
     app.add_middleware(

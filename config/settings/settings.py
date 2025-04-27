@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Summiva"
     APP_SERVICE_NAME: str = "backend"
     APP_SERVICE_VERSION: str = "1.0.0"
+    
+    # --- CORS Settings ---
+    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ALLOW_CREDENTIALS: bool = True
+    CORS_ALLOW_METHODS: list[str] = ["*"]
+    CORS_ALLOW_HEADERS: list[str] = ["*"]
 
     # --- Security ---
     SECRET_KEY: str
