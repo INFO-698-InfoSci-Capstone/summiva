@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
 
 from .models import Group, GroupMember, GroupingResult
-from .schemas import GroupingRequest, GroupingResponse
+from ..schemas.schemas import GroupingRequest, GroupingResponse
 from apps.documents.models import Document
 from core.database.database import get_db
 
