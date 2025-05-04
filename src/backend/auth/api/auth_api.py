@@ -3,7 +3,21 @@ from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import Any
-from config.settings.settings import settings
+
+# Update the settings import to use try/except for better reliability
+try:
+    from config.settings import settings
+except ImportError:
+    try:
+        import sys
+        import os
+        # Try to add project root to path if running in Docker
+        sys.path.insert(0, os.environ.get("PROJECT_ROOT", "/app"))
+        from config.settings.settings import settings
+    except ImportError:
+        # Fallback to local import if in development
+        from src.backend.auth.config.settings import settings
+
 from src.backend.auth.database.database import get_db
 from src.backend.auth.models.user import User
 from src.backend.auth.models.token import RefreshToken as RefreshTokenDB  # DB model for refresh tokens

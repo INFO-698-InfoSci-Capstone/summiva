@@ -2,14 +2,56 @@
 # Standard Library
 # -----------------------
 import os
+import sys
+from pathlib import Path
 from logging import config as logging_config
+import importlib
+
+# -----------------------
+# Setup Python Path
+# -----------------------
+# Add project root to sys.path to enable absolute imports
+project_root = Path(__file__).parent.parent.parent
+config_dir = project_root / 'config'
+settings_dir = config_dir / 'settings'
+
+# Add all necessary paths to sys.path
+for path in [str(project_root), str(config_dir), str(settings_dir)]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+# Ensure config is a proper package
+init_file = config_dir / '__init__.py'
+if not init_file.exists():
+    try:
+        init_file.touch()
+        print(f"Created __init__.py in {config_dir}")
+    except Exception as e:
+        print(f"Warning: Could not create __init__.py in {config_dir}: {str(e)}")
+
+# Ensure settings is a proper package
+init_file = settings_dir / '__init__.py'
+if not init_file.exists():
+    try:
+        init_file.touch()
+        print(f"Created __init__.py in {settings_dir}")
+    except Exception as e:
+        print(f"Warning: Could not create __init__.py in {settings_dir}: {str(e)}")
+
+# -----------------------
+# Import Setup
+# -----------------------
+try:
+    from src.backend.core.imports import setup_imports
+    # Configure import paths first before any other imports
+    setup_imports()
+except ImportError:
+    print(f"Failed to import setup_imports. Current sys.path: {sys.path}")
+    raise
 
 # -----------------------
 # Third-Party Libraries
 # -----------------------
-from backend.core.dependencies import get_message_queue
-from backend.core.message_queue import MessageQueue
-from backend.core.service_registry import ServiceRegistry
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -19,20 +61,44 @@ from prometheus_client import generate_latest, REGISTRY
 # -----------------------
 # Internal Modules
 # -----------------------
+# Try to import settings using different methods
+try:
+    from config.settings import settings
+except ImportError:
+    try:
+        # Try direct import
+        sys.path.insert(0, str(settings_dir))
+        from settings import settings
+    except ImportError as e:
+        print(f"Warning: Could not import settings: {str(e)}. Using environment variables.")
+        # Create a fallback settings class using env vars
+        class DefaultSettings:
+            def __init__(self):
+                self.APP_NAME = os.environ.get("APP_NAME", "Summiva")
+                self.APP_SERVICE_VERSION = os.environ.get("APP_SERVICE_VERSION", "1.0.0")
+                self.CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
+                self.CORS_ALLOW_CREDENTIALS = os.environ.get("CORS_ALLOW_CREDENTIALS", "True") == "True"
+                self.CORS_ALLOW_METHODS = ["*"]
+                self.CORS_ALLOW_HEADERS = ["*"]
+                
+        settings = DefaultSettings()
+
 from config.logs.logging import setup_logging
-from backend.auth.api import auth_api
-from backend.search.api import search_api
-from backend.tagging.api import tagging_api
-from backend.grouping.api import grouping_api
-from backend.summarization.api import summarization_api
-from backend.core.middleware.core_middleware import setup_middlewares
-from backend.core.database.database import init_db, engine, Base
-from config.settings.settings import settings
+from src.backend.core.message_queue import MessageQueue
+from src.backend.core.service_registry import ServiceRegistry
+from src.backend.auth.api import auth_api
+from src.backend.search.api import search_api
+from src.backend.tagging.api import tagging_api
+from src.backend.grouping.api import grouping_api
+from src.backend.summarization.api import summarization_api
+from src.backend.core.middleware.core_middleware import setup_middlewares
+from src.backend.core.database.database import init_db, engine, Base
 
 # -----------------------
 # Logging Configuration
 # -----------------------
 logger = setup_logging()
+logger.info(f"Starting application with sys.path: {sys.path}")
 
 # -----------------------
 # App Initialization
@@ -87,7 +153,6 @@ async def startup_event():
     await message_queue.connect()
     logger.info("MessageQueue connected at startup.")
 
-
 # -----------------------
 # Core Routes
 # -----------------------
@@ -111,7 +176,6 @@ app.include_router(summarization_api, prefix="/api/summarization", tags=["Summar
 app.include_router(tagging_api, prefix="/api/tagging", tags=["Tagging"])
 app.include_router(search_api, prefix="/api/search", tags=["Search"])
 app.include_router(grouping_api, prefix="/api/grouping", tags=["Grouping"])
-
 
 # -----------------------
 # Shutdown Event

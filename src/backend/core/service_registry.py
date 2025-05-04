@@ -2,7 +2,7 @@
 from typing import Dict, Optional
 import httpx
 import logging
-from config.settings.settings import settings
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 

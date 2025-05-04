@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any, List
 from .base_client import BaseAPIClient
 
-from config.settings.settings import settings
+from config.settings import settings
 
 class TaggingAPIClient(BaseAPIClient):
     def __init__(self):

@@ -1,20 +1,22 @@
-# src/utils/logging.py
+# src/backend/grouping/utils/logging.py
 
-import logging
-import sys
-from src.config.config import settings
+from config.logs.logging import setup_logging
 
-def setup_logger(name: str = "summiva"):
-    logger = logging.getLogger(name)
-    logger.setLevel(settings.LOG_LEVEL.upper())
-
-    handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
-    )
-    handler.setFormatter(formatter)
-
-    if not logger.hasHandlers():
-        logger.addHandler(handler)
-
-    return logger
+# Re-export the central logging setup
+def get_logger(module_name=None):
+    """
+    Get a logger for the grouping service
+    
+    Args:
+        module_name (str, optional): Sub-module name within the grouping service
+        
+    Returns:
+        logging.Logger: Configured logger
+    """
+    service_name = "grouping"
+    if module_name:
+        logger_name = f"{service_name}.{module_name}"
+    else:
+        logger_name = service_name
+        
+    return setup_logging(logger_name)

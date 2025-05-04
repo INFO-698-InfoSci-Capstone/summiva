@@ -186,15 +186,13 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus:/etc/prometheus
+      - ./infra/monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     networks:
       - summiva-network-prod
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
+    entrypoint: ["/etc/prometheus/entrypoint.sh"]
+    # Using entrypoint script instead of command
+    # command is defined in the entrypoint script
     depends_on:
       - backend
       - auth

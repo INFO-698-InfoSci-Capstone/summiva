@@ -5,23 +5,29 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from bson.objectid import ObjectId
 
+# Use standardized imports
+from backend.core.imports import setup_imports
+setup_imports()
+
 # Database and Models
-from src.backend.summarization.utils.security import fetch_user_from_auth, get_authenticated_user_id
-from src.backend.auth.models import User
-from src.backend.summarization.core.summarizer import summarize_text
-from src.backend.summarization.models.summary import Document, Summary
-from src.backend.summarization.schemas import (
+from backend.summarization.utils.security import fetch_user_from_auth, get_authenticated_user_id
+from backend.auth.models import User
+from backend.summarization.core.summarizer import summarize_text
+from backend.summarization.models.summary import Document, Summary
+from backend.summarization.schemas import (
     DocumentCreate, DocumentInDB, DocumentUpdate,
     SummaryInDB, SummarizationRequest, SummarizationResponse,
     DocumentFilter, SummaryFilter
 )
-from src.backend.summarization.utils.security import get_raw_text
-from src.backend.summarization.database.mongo_session import mongo_db
-from src.backend.summarization.celery_tasks.worker import run_summarization
-from src.backend.core.database.database import get_db
+from backend.summarization.utils.security import get_raw_text
+from backend.summarization.database.mongo_session import mongo_db
+from backend.summarization.celery_tasks.worker import run_summarization
+from backend.core.database.database import get_db
+from config.logs.logging import setup_logging
 
 router = APIRouter()
 security = HTTPBearer()
+logger = setup_logging("summarization")
 
 # Create Document (PostgreSQL)
 @router.post("/documents", response_model=DocumentInDB)

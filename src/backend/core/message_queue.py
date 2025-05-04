@@ -4,7 +4,7 @@ import asyncio
 import aio_pika
 from aio_pika import Message, ExchangeType
 import logging
-from config.settings.settings import settings
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 

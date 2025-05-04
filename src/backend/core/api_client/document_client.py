@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 from .base_client import BaseAPIClient
 
-from config.settings.settings import settings
+from config.settings import settings
 
 class DocumentAPIClient(BaseAPIClient):
     def __init__(self):

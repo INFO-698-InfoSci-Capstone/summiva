@@ -1,42 +1,54 @@
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from typing import Optional
-import requests
-import os
+"""
+Summarization Service Main Entry Point
+=====================================
+"""
+import asyncio
+from pathlib import Path
+import sys
 
-app = FastAPI(title="Summarization Service")
+# Add project root to path to ensure imports work correctly
+project_root = Path(__file__).parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-# Get auth service URL from environment
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth:8000")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{AUTH_SERVICE_URL}/token")
+from backend.core.imports import setup_imports
+setup_imports()
 
-async def verify_token(token: str = Depends(oauth2_scheme)):
-    try:
-        response = requests.get(
-            f"{AUTH_SERVICE_URL}/verify",
-            headers={"Authorization": f"Bearer {token}"}
-        )
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
-            )
-        return response.json()
-    except requests.RequestException:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Auth service unavailable"
-        )
+from backend.core.service_init import init_service
+from backend.summarization.api.summarization_api import router as summarization_router
 
-@app.post("/summarize")
-async def summarize_text(text: str, token: str = Depends(verify_token)):
-    # TODO: Implement actual summarization logic
-    # This is a placeholder for demonstration
-    return {
-        "summary": f"Summary of: {text[:50]}...",
-        "user": token["user"]
-    }
+def setup_routes(app):
+    """Set up all route handlers for the summarization service"""
+    app.include_router(summarization_router, prefix="/api/summarization", tags=["Summarization"])
 
-@app.get("/health")
-async def health_check():
-    return {"status": "ok"}
+async def startup_handler(app):
+    """Additional startup tasks specific to summarization service"""
+    from config.logs.logging import setup_logging
+    logger = setup_logging("summarization")
+    logger.info("Initializing summarization models...")
+    # Add any summarization-specific initialization here
+    # e.g., load ML models, connect to specialized services, etc.
+
+async def shutdown_handler(app):
+    """Additional shutdown tasks specific to summarization service"""
+    from config.logs.logging import setup_logging
+    logger = setup_logging("summarization")
+    logger.info("Cleaning up summarization resources...")
+    # Add any summarization-specific cleanup here
+
+def create_app():
+    """Create the FastAPI application for the summarization service"""
+    return init_service(
+        service_name="summarization",
+        title="Document Summarization API",
+        description="API for document summarization using various NLP models",
+        routes_setup=setup_routes,
+        startup_handlers=[startup_handler],
+        shutdown_handlers=[shutdown_handler]
+    )
+
+app = create_app()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

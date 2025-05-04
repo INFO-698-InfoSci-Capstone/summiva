@@ -1,25 +1,50 @@
-fastapi
-uvicorn[standard]
-pydantic
-requests
-celery
-pymongo
-python-dotenv
-bson
-redis
-transformers
-scikit-learn
-spacy
-bertopic
-sentence-transformers
-elasticsearch
-faiss-cpu
+# Core Framework
+fastapi==0.110.1
+uvicorn[standard]==0.27.1
 gunicorn
-sqlalchemy
+
+# Settings & Environment
+pydantic>=2.0,<3.0
+pydantic-settings
+python-dotenv
+
+# Database
+sqlalchemy>=2.0
+psycopg2-binary
+alembic
+
+# Authentication & Security
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
-prometheus-client
+itsdangerous
+PyJWT>=2.6.0
+
+# Messaging / Caching
+celery==5.3.6
+redis
+
+# NLP / ML Libraries
+transformers
 torch
-psycopg2-binary
-alembic
+scikit-learn
+sentence-transformers
+spacy
+bertopic
+faiss-cpu
+
+# Search
+elasticsearch
+
+# HTTP Client
+httpx>=0.24.0
+
+# MongoDB
+pymongo<5.0.0
+
+# Logging & Utilities
+pyyaml
+loguru
+tenacity
+python-dateutil
+prometheus-client
