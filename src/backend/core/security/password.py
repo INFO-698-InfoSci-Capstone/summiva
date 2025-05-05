@@ -20,9 +20,18 @@ from config.logs.logging import setup_logging
 # Get logger for this module
 logger = setup_logging("core.security.password")
 
-# Password hashing settings
-SALT_ROUNDS = settings.AUTH_PASSWORD_SALT_ROUNDS
-HASH_ALGORITHM = settings.AUTH_PASSWORD_HASH_ALGORITHM
+# Password hashing settings with fallback values
+try:
+    SALT_ROUNDS = settings.AUTH_PASSWORD_SALT_ROUNDS
+except AttributeError:
+    logger.warning("AUTH_PASSWORD_SALT_ROUNDS not found in settings, using default value of 12")
+    SALT_ROUNDS = 12
+
+try:
+    HASH_ALGORITHM = settings.AUTH_PASSWORD_HASH_ALGORITHM
+except AttributeError:
+    logger.warning("AUTH_PASSWORD_HASH_ALGORITHM not found in settings, using default value of bcrypt")
+    HASH_ALGORITHM = "bcrypt"
 
 # Create password context for hashing
 pwd_context = CryptContext(

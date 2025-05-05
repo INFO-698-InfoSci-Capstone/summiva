@@ -1,67 +1,127 @@
-"""
-Minimal Settings module for Summiva
-Used when running in Docker environments where the PYTHONPATH may not be properly configured
-"""
-import os
-from typing import Dict, List, Optional, Any
+import os, sys, yaml
+from pathlib import Path
+from functools import lru_cache
+from typing import List, Any
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv"])
+    from dotenv import load_dotenv
+
+# -----------------------------
+# Load .env files
+# -----------------------------
+env_paths = [
+    Path(__file__).parent / "secrets.env",
+    Path(__file__).parent.parent.parent / ".env",
+]
+for p in env_paths:
+    if p.exists():
+        load_dotenv(dotenv_path=p)
+        print(f"✅ Loaded env: {p}")
+
+# -----------------------------
+# Load settings.yaml
+# -----------------------------
+yaml_config = {}
+yaml_path = Path(__file__).parent / "settings.yaml"
+if yaml_path.exists():
+    with open(yaml_path, "r") as f:
+        full_yaml = yaml.safe_load(f)
+        env = os.getenv("ENVIRONMENT", "development").lower()
+        yaml_config = {**full_yaml.get("default", {}), **full_yaml.get(env, {})}
+
+def get_config(key: str, default: Any = None) -> Any:
+    keys = key.split(".")
+    val = yaml_config
+    for k in keys:
+        if isinstance(val, dict):
+            val = val.get(k)
+        else:
+            break
+    if val not in [None, {}, ""]:
+        return val
+    env_key = key.upper().replace(".", "_")
+    return os.getenv(env_key, default)
+
+# -----------------------------
+# Unified Settings Class
+# -----------------------------
 class Settings:
     # --- Environment ---
-    ENVIRONMENT: str = os.environ.get("ENVIRONMENT", "development")
-    DEBUG: bool = os.environ.get("DEBUG", "True") == "True"
-    LOG_LEVEL: str = os.environ.get("LOG_LEVEL", "INFO")
+    ENVIRONMENT: str = get_config("environment", "development")
+    DEBUG: bool = str(get_config("debug", ENVIRONMENT != "production")).lower() == "true"
+    LOG_LEVEL: str = get_config("log_level", "DEBUG" if DEBUG else "INFO")
 
     # --- Application ---
-    APP_NAME: str = os.environ.get("APP_NAME", "Summiva")
+    APP_NAME: str = get_config("app_name", "Summiva")
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Summiva"
-    APP_SERVICE_NAME: str = os.environ.get("SERVICE_NAME", "backend")
-    APP_SERVICE_VERSION: str = "1.0.0"
-    
-    # --- CORS Settings ---
-    CORS_ORIGINS: List[str] = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+    APP_SERVICE_NAME: str = get_config("service_name", "backend")
+    APP_SERVICE_VERSION: str = get_config("app_version", "1.0.0")
+
+    # --- CORS ---
+    CORS_ORIGINS: List[str] = get_config("cors_origins", "http://localhost:3000,http://localhost:8080").split(",")
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: List[str] = ["*"]
     CORS_ALLOW_HEADERS: List[str] = ["*"]
 
     # --- Security ---
-    SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev_secret_key")
-    JWT_SECRET_KEY: str = os.environ.get("JWT_SECRET_KEY", "dev_jwt_secret_key")
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    AUTH_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    AUTH_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    AUTH_PASSWORD_HASH_ALGORITHM: str = "bcrypt"
-    AUTH_PASSWORD_SALT_ROUNDS: int = 12
+    SECRET_KEY: str = get_config("secret_key", "dev_secret_key")
+    JWT_SECRET_KEY: str = get_config("jwt_secret_key", "dev_jwt_secret_key")
+    JWT_ALGORITHM: str = get_config("jwt_algorithm", "HS256")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(get_config("access_token_expire_minutes", 30))
+    AUTH_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(get_config("auth_access_token_expire_minutes", 30))
+    AUTH_REFRESH_TOKEN_EXPIRE_DAYS: int = int(get_config("auth_refresh_token_expire_days", 7))
+    AUTH_PASSWORD_HASH_ALGORITHM: str = get_config("auth_password_hash_algorithm", "bcrypt")
+    AUTH_PASSWORD_SALT_ROUNDS: int = int(get_config("auth_password_salt_rounds", 12))
 
-    # --- Database ---
-    POSTGRES_USER: str = os.environ.get("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD: str = os.environ.get("POSTGRES_PASSWORD", "postgres")
-    POSTGRES_DB: str = os.environ.get("POSTGRES_DB", "summiva")
-    POSTGRES_HOST: str = os.environ.get("POSTGRES_HOST", "postgres")
-    POSTGRES_PORT: int = int(os.environ.get("POSTGRES_PORT", "5432"))
-    DATABASE_URL: str = os.environ.get(
-        "DATABASE_URL", 
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-    )
+    # --- PostgreSQL ---
+    POSTGRES_USER: str = get_config("postgres_user", "postgres")
+    POSTGRES_PASSWORD: str = get_config("postgres_password", "postgres")
+    POSTGRES_DB: str = get_config("postgres_db", "summiva")
+    POSTGRES_HOST: str = get_config("postgres_host", "localhost")
+    POSTGRES_PORT: int = int(get_config("postgres_port", 5432))
+    DATABASE_URL: str = get_config("postgres.uri", f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
+    POSTGRES_DATABASE_URL: str = DATABASE_URL
+    DATABASE_POOL_SIZE: int = int(get_config("database.pool_size", 10))
+    DATABASE_MAX_OVERFLOW: int = int(get_config("database.max_overflow", 20))
 
-    # --- Redis and Celery ---
-    REDIS_HOST: str = os.environ.get("REDIS_HOST", "redis")
-    REDIS_PORT: int = int(os.environ.get("REDIS_PORT", "6379"))
-    REDIS_DB: int = int(os.environ.get("REDIS_DB", "0"))
-    REDIS_URL: str = os.environ.get("REDIS_URL", f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
+    # --- MongoDB ---
+    MONGODB_URI: str = get_config("mongodb.uri", "mongodb://localhost:27017")
 
-    # --- Service URLs ---
-    AUTH_SERVICE_URL: str = os.environ.get("AUTH_SERVICE_URL", "http://auth:8000")
-    SUMMARIZATION_SERVICE_URL: str = os.environ.get("SUMMARIZATION_SERVICE_URL", "http://summarization:8000")
-    TAGGING_SERVICE_URL: str = os.environ.get("TAGGING_SERVICE_URL", "http://tagging:8000")
-    GROUPING_SERVICE_URL: str = os.environ.get("GROUPING_SERVICE_URL", "http://grouping:8000")
-    SEARCH_SERVICE_URL: str = os.environ.get("SEARCH_SERVICE_URL", "http://search:8000")
+    # --- Redis ---
+    REDIS_HOST: str = get_config("redis.host", "localhost")
+    REDIS_PORT: int = int(get_config("redis.port", 6379))
+    REDIS_DB: int = int(get_config("redis.db", 0))
+    REDIS_URL: str = get_config("redis.url", f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
+
+    # --- Celery ---
+    CELERY_BROKER_URL: str = get_config("celery.broker_url", "amqp://guest:guest@localhost:5672//")
+    CELERY_RESULT_BACKEND: str = get_config("celery.result_backend", "rpc://")
+
+    # --- Search ---
+    ELASTIC_URL: str = get_config("search.elastic_url", "http://elasticsearch:9200")
+    FAISS_INDEX_PATH: str = get_config("search.faiss_index_path", "faiss/index")
+    FAISS_DOC_MAP_PATH: str = get_config("search.faiss_doc_map_path", "faiss/doc_ids.npy")
 
     # --- Monitoring ---
-    ENABLE_MONITORING: bool = os.environ.get("ENABLE_MONITORING", "False") == "True"
-    PROMETHEUS_PORT: int = int(os.environ.get("PROMETHEUS_PORT", "9090"))
-    GRAFANA_PORT: int = int(os.environ.get("GRAFANA_PORT", "3000"))
+    ENABLE_MONITORING: bool = str(get_config("enable_monitoring", "False")).lower() == "true"
+    PROMETHEUS_PORT: int = int(get_config("prometheus_port", 9090))
+    GRAFANA_PORT: int = int(get_config("grafana_port", 3000))
 
-# Create a global settings instance
-settings = Settings()
+    # --- External Services ---
+    AUTH_SERVICE_URL: str = get_config("auth_service_url", "http://auth:8000")
+    SUMMARIZATION_SERVICE_URL: str = get_config("summarization_service_url", "http://summarization:8000")
+    TAGGING_SERVICE_URL: str = get_config("tagging_service_url", "http://tagging:8000")
+    GROUPING_SERVICE_URL: str = get_config("grouping_service_url", "http://grouping:8000")
+    SEARCH_SERVICE_URL: str = get_config("search_service_url", "http://search:8000")
+    CLUSTERING_SERVICE_URL: str = get_config("clustering_service_url", "http://clustering:8000")
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+settings = get_settings()

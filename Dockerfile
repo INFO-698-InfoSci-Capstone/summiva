@@ -1,61 +1,63 @@
-# Use Python 3.12 slim base
-FROM python:3.12-slim
+############################
+# ---- Builder image ----  #
+############################
+FROM python:3.12-slim AS builder
 
-# Create a non-root user
-RUN useradd -m -u 1000 appuser
-
-# Set working directory
-WORKDIR /app
-
-# Environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/src \
-    PORT=8000 \
-    PATH="/home/appuser/.local/bin:$PATH"
-
-# System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
     libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-COPY src/backend/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+WORKDIR /build
 
-# Copy the source code
-COPY src /app/src
+COPY src/backend/requirements.txt .
 
-# Create missing __init__.py files
-RUN find /app/src -type d ! -exec test -e {}/__init__.py \; -exec touch {}/__init__.py \; \
-    && mkdir -p /app/src/data /app/src/logs /app/src/models \
-    && mkdir -p /app/src/exclude_patterns \
-    && echo "postgresql/data" > /app/src/exclude_patterns/reload_exclude.txt \
-    && chown -R appuser:appuser /app
+RUN python -m pip install --upgrade pip wheel setuptools \
+ && pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt
 
-# Switch to non-root user
+############################
+# ---- Runtime image ----  #
+############################
+FROM python:3.12-slim
+
+ARG USER_ID=1000
+RUN useradd -m -u $USER_ID appuser
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PATH="/home/appuser/.local/bin:$PATH" \
+    PORT=8000 \
+    ENVIRONMENT=production
+
+WORKDIR /app
+
+# Install pre-built Python wheels
+COPY --from=builder /build/wheels /wheels
+RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+
+# Copy app source and config
+COPY src ./src
+COPY config ./config
+
+# Copy unified entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Create logs dir
+RUN mkdir -p /app/logs && chown -R appuser:appuser /app
+
 USER appuser
 
-# Expose port
 EXPOSE 8000
 
-# Health check for readiness
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/healthcheck || exit 1
+ CMD curl -f http://localhost:${PORT}/healthcheck || exit 1
 
-# Default command
-CMD ["sh", "-c", "\
-    SERVICE_NAME=${SERVICE_NAME:-backend}; \
-    cd /app/src && \
-    gunicorn backend.${SERVICE_NAME}.main:app \
-      --worker-class uvicorn.workers.UvicornWorker \
-      --bind 0.0.0.0:8000 \
-      --reload \
-      --reload-exclude './postgresql/data/*' \
-      --reload-exclude './data/*' \
-      --reload-exclude '*.pyc' \
-      --reload-exclude './__pycache__' \
-"]
-
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["backend"]

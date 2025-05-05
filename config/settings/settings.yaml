@@ -1,4 +1,3 @@
- 
 default:
   app_name: "Summiva Platform"
   version: "1.0"
@@ -7,6 +6,10 @@ default:
   access_token_expire_minutes: 60
 
   auth_service_url: "http://auth-service:8000"
+
+  database:
+    pool_size: 10
+    max_overflow: 20
 
   postgres:
     uri: "postgresql://summiva_user:summiva_pass@postgresql/summiva_db"
@@ -24,6 +27,9 @@ default:
     faiss_doc_map_path: "faiss/doc_ids.npy"
 
   log_config: "config/logging.conf"
+
+  prometheus_port: 9090
+  grafana_port: 3000
 
 development:
   log_level: "DEBUG"

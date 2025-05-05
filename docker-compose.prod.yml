@@ -1,217 +1,8 @@
 version: '3.8'
 
 networks:
-  summiva-network-prod:
+  summiva-network:
     driver: bridge
-
-services:
-  backend:
-    image: backend:latest
-    environment:
-      - ENVIRONMENT=production
-      - SERVICE_NAME=backend
-      - PYTHONPATH=/app/src
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-summiva}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MONGODB_HOST=mongodb
-      - MONGODB_PORT=27017
-    networks:
-      - summiva-network-prod
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-
-  auth:
-    image: auth:latest
-    environment:
-      - ENVIRONMENT=production
-      - SERVICE_NAME=auth
-      - PYTHONPATH=/app/src
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-summiva}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    networks:
-      - summiva-network-prod
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  summarization:
-    image: summarization:latest
-    environment:
-      - ENVIRONMENT=production
-      - SERVICE_NAME=summarization
-      - PYTHONPATH=/app/src
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MONGODB_HOST=mongodb
-      - MONGODB_PORT=27017
-    networks:
-      - summiva-network-prod
-    depends_on:
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-
-  tagging:
-    image: tagging:latest
-    environment:
-      - ENVIRONMENT=production
-      - SERVICE_NAME=tagging
-      - PYTHONPATH=/app/src
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MONGODB_HOST=mongodb
-      - MONGODB_PORT=27017
-    networks:
-      - summiva-network-prod
-    depends_on:
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-
-  grouping:
-    image: grouping:latest
-    environment:
-      - ENVIRONMENT=production
-      - SERVICE_NAME=grouping
-      - PYTHONPATH=/app/src
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MONGODB_HOST=mongodb
-      - MONGODB_PORT=27017
-    networks:
-      - summiva-network-prod
-    depends_on:
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-
-  search:
-    image: search:latest
-    environment:
-      - ENVIRONMENT=production
-      - SERVICE_NAME=search
-      - PYTHONPATH=/app/src
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MONGODB_HOST=mongodb
-      - MONGODB_PORT=27017
-    networks:
-      - summiva-network-prod
-    depends_on:
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-
-  clustering:
-    image: clustering:latest
-    environment:
-      - ENVIRONMENT=production
-      - SERVICE_NAME=clustering
-      - PYTHONPATH=/app/src
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - MONGODB_HOST=mongodb
-      - MONGODB_PORT=27017
-    networks:
-      - summiva-network-prod
-    depends_on:
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-
-  postgres:
-    image: postgres:15
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-summiva}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - summiva-network-prod
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7
-    volumes:
-      - redis_data:/data
-    networks:
-      - summiva-network-prod
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  mongodb:
-    image: mongo:6
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - summiva-network-prod
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./infra/monitoring/prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
-    networks:
-      - summiva-network-prod
-    entrypoint: ["/etc/prometheus/entrypoint.sh"]
-    # Using entrypoint script instead of command
-    # command is defined in the entrypoint script
-    depends_on:
-      - backend
-      - auth
-      - summarization
-      - tagging
-      - grouping
-      - search
-      - clustering
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-    networks:
-      - summiva-network-prod
-    depends_on:
-      - prometheus
 
 volumes:
   postgres_data:
@@ -224,3 +15,666 @@ volumes:
     driver: local
   grafana_data:
     driver: local
+  elasticsearch_data:
+    driver: local
+  logstash_data:
+    driver: local
+  kibana_data:
+    driver: local
+
+services:
+
+  # Nginx reverse proxy for all services
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+      - auth
+      - summarization
+      - tagging
+      - grouping
+      - search
+      - clustering
+    networks:
+      - summiva-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 30s
+
+  # API Gateway
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - 8000
+    environment:
+      - ENVIRONMENT=production
+      - SERVICE_NAME=backend
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      # Security settings
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - AUTH_PASSWORD_HASH_ALGORITHM=bcrypt
+      - AUTH_PASSWORD_SALT_ROUNDS=12
+      # Production specific settings
+      - WORKERS_PER_CORE=2
+      - MAX_WORKERS=8
+      - LOG_LEVEL=info
+      - GUNICORN_CMD_ARGS="--keep-alive 120 --max-requests 1000 --max-requests-jitter 50"
+    volumes:
+      - ./data:/app/src/data:ro
+    networks:
+      - summiva-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - 8000
+    environment:
+      - ENVIRONMENT=production
+      - SERVICE_NAME=auth
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # Security settings
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - AUTH_PASSWORD_HASH_ALGORITHM=bcrypt
+      - AUTH_PASSWORD_SALT_ROUNDS=12
+      # Service URLs for inter-service communication
+      - AUTH_SERVICE_URL=http://auth:8000
+      - SUMMARIZATION_SERVICE_URL=http://summarization:8000
+      - TAGGING_SERVICE_URL=http://tagging:8000
+      - GROUPING_SERVICE_URL=http://grouping:8000
+      - SEARCH_SERVICE_URL=http://search:8000
+      # Production specific settings
+      - WORKERS_PER_CORE=1
+      - MAX_WORKERS=4
+      - LOG_LEVEL=info
+      - GUNICORN_CMD_ARGS="--keep-alive 120 --max-requests 1000 --max-requests-jitter 50"
+    command: ["sh", "/app/src/backend/auth/entrypoint.sh"]
+    networks:
+      - summiva-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+
+  summarization:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - 8000
+    environment:
+      - ENVIRONMENT=production
+      - SERVICE_NAME=summarization
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      # Security settings
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      # Service URLs for inter-service communication
+      - AUTH_SERVICE_URL=http://auth:8000
+      - SUMMARIZATION_SERVICE_URL=http://summarization:8000
+      - TAGGING_SERVICE_URL=http://tagging:8000
+      - GROUPING_SERVICE_URL=http://grouping:8000
+      - SEARCH_SERVICE_URL=http://search:8000
+      # Production specific settings
+      - WORKERS_PER_CORE=1
+      - MAX_WORKERS=4
+      - LOG_LEVEL=info
+      - GUNICORN_CMD_ARGS="--keep-alive 120 --max-requests 1000 --max-requests-jitter 50"
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+
+  tagging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - 8000
+    environment:
+      - ENVIRONMENT=production
+      - SERVICE_NAME=tagging
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      # Security settings
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      # Service URLs for inter-service communication
+      - AUTH_SERVICE_URL=http://auth:8000
+      - SUMMARIZATION_SERVICE_URL=http://summarization:8000
+      - TAGGING_SERVICE_URL=http://tagging:8000
+      - GROUPING_SERVICE_URL=http://grouping:8000
+      - SEARCH_SERVICE_URL=http://search:8000
+      # Production specific settings
+      - WORKERS_PER_CORE=1
+      - MAX_WORKERS=4
+      - LOG_LEVEL=info
+      - GUNICORN_CMD_ARGS="--keep-alive 120 --max-requests 1000 --max-requests-jitter 50"
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+
+  grouping:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - 8000
+    environment:
+      - ENVIRONMENT=production
+      - SERVICE_NAME=grouping
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      # Security settings
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      # Service URLs for inter-service communication
+      - AUTH_SERVICE_URL=http://auth:8000
+      - SUMMARIZATION_SERVICE_URL=http://summarization:8000
+      - TAGGING_SERVICE_URL=http://tagging:8000
+      - GROUPING_SERVICE_URL=http://grouping:8000
+      - SEARCH_SERVICE_URL=http://search:8000
+      # Production specific settings
+      - WORKERS_PER_CORE=1
+      - MAX_WORKERS=4
+      - LOG_LEVEL=info
+      - GUNICORN_CMD_ARGS="--keep-alive 120 --max-requests 1000 --max-requests-jitter 50"
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+
+  search:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - 8000
+    environment:
+      - ENVIRONMENT=production
+      - SERVICE_NAME=search
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      # Security settings
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      # Service URLs for inter-service communication
+      - AUTH_SERVICE_URL=http://auth:8000
+      - SUMMARIZATION_SERVICE_URL=http://summarization:8000
+      - TAGGING_SERVICE_URL=http://tagging:8000
+      - GROUPING_SERVICE_URL=http://grouping:8000
+      - SEARCH_SERVICE_URL=http://search:8000
+      # Production specific settings
+      - WORKERS_PER_CORE=1
+      - MAX_WORKERS=4
+      - LOG_LEVEL=info
+      - GUNICORN_CMD_ARGS="--keep-alive 120 --max-requests 1000 --max-requests-jitter 50"
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+
+  clustering:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - 8000
+    environment:
+      - ENVIRONMENT=production
+      - SERVICE_NAME=clustering
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      # Security settings
+      - SECRET_KEY=${SECRET_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      # Service URLs for inter-service communication
+      - AUTH_SERVICE_URL=http://auth:8000
+      - SUMMARIZATION_SERVICE_URL=http://summarization:8000
+      - TAGGING_SERVICE_URL=http://tagging:8000
+      - GROUPING_SERVICE_URL=http://grouping:8000
+      - SEARCH_SERVICE_URL=http://search:8000
+      # Production specific settings
+      - WORKERS_PER_CORE=1
+      - MAX_WORKERS=4
+      - LOG_LEVEL=info
+      - GUNICORN_CMD_ARGS="--keep-alive 120 --max-requests 1000 --max-requests-jitter 50"
+    networks:
+      - summiva-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+
+  postgres:
+    image: postgres:15-alpine
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - summiva-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  redis:
+    image: redis:7-alpine
+    expose:
+      - 6379
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    networks:
+      - summiva-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  mongodb:
+    image: mongo:6
+    expose:
+      - 27017
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - summiva-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  # ELK Stack for centralized logging
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    expose:
+      - 9200
+      - 9300
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - ./infra/monitoring/elk/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=false
+    networks:
+      - summiva-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+      restart_policy:
+        condition: any
+        delay: 20s
+        max_attempts: 3
+        window: 120s
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.1
+    volumes:
+      - ./infra/monitoring/elk/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - logstash_data:/usr/share/logstash/data
+    environment:
+      - LS_JAVA_OPTS=-Xms512m -Xmx512m
+    networks:
+      - summiva-network
+    depends_on:
+      - elasticsearch
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: any
+        delay: 20s
+        max_attempts: 3
+        window: 120s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    expose:
+      - 5601
+    volumes:
+      - ./infra/monitoring/elk/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - kibana_data:/usr/share/kibana/data
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - summiva-network
+    depends_on:
+      - elasticsearch
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: any
+        delay: 30s
+        max_attempts: 3
+        window: 120s
+
+  # Prometheus and Grafana for metrics
+  prometheus:
+    image: prom/prometheus:latest
+    expose:
+      - 9090
+    volumes:
+      - ./infra/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - summiva-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+
+  grafana:
+    image: grafana/grafana:latest
+    expose:
+      - 3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    networks:
+      - summiva-network
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+        window: 120s

@@ -43,6 +43,11 @@ class TokenPayload(BaseModel):
     exp: datetime
     roles: Optional[List[str]] = []
 
+class TokenData(BaseModel):
+    email: Optional[str] = None
+    user_id: Optional[int] = None
+    roles: Optional[List[str]] = []
+
 # ------------------------
 # 🔄 Refresh Token Support
 # ------------------------

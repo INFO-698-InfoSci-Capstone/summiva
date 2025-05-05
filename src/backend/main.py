@@ -12,65 +12,15 @@ import importlib
 # -----------------------
 # Add project root to sys.path to enable absolute imports
 project_root = Path(__file__).parent.parent.parent
-config_dir = project_root / 'config'
-settings_dir = config_dir / 'settings'
+sys.path.insert(0, str(project_root))
 
-# Add all necessary paths to sys.path
-for path in [str(project_root), str(config_dir), str(settings_dir)]:
-    if path not in sys.path:
-        sys.path.insert(0, path)
-
-# Ensure config is a proper package
-init_file = config_dir / '__init__.py'
-if not init_file.exists():
-    try:
-        init_file.touch()
-        print(f"Created __init__.py in {config_dir}")
-    except Exception as e:
-        print(f"Warning: Could not create __init__.py in {config_dir}: {str(e)}")
-
-# Ensure settings is a proper package
-init_file = settings_dir / '__init__.py'
-if not init_file.exists():
-    try:
-        init_file.touch()
-        print(f"Created __init__.py in {settings_dir}")
-    except Exception as e:
-        print(f"Warning: Could not create __init__.py in {settings_dir}: {str(e)}")
-
-# -----------------------
-# Import Setup
-# -----------------------
-try:
-    from src.backend.core.imports import setup_imports
-    # Configure import paths first before any other imports
-    setup_imports()
-except ImportError:
-    print(f"Failed to import setup_imports. Current sys.path: {sys.path}")
-    raise
-
-# -----------------------
-# Third-Party Libraries
-# -----------------------
-from fastapi import FastAPI, Response
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
-from prometheus_fastapi_instrumentator import Instrumentator
-from prometheus_client import generate_latest, REGISTRY
-
-# -----------------------
-# Internal Modules
-# -----------------------
-# Try to import settings using different methods
+# Import settings module with configurable precedence
 try:
     from config.settings import settings
 except ImportError:
     try:
-        # Try direct import
-        sys.path.insert(0, str(settings_dir))
-        from settings import settings
-    except ImportError as e:
-        print(f"Warning: Could not import settings: {str(e)}. Using environment variables.")
+        from config.settings.settings import settings
+    except ImportError:
         # Create a fallback settings class using env vars
         class DefaultSettings:
             def __init__(self):
@@ -83,6 +33,18 @@ except ImportError:
                 
         settings = DefaultSettings()
 
+# -----------------------
+# Third-Party Libraries
+# -----------------------
+from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator, metrics
+from prometheus_client import generate_latest, REGISTRY
+
+# -----------------------
+# Internal Modules
+# -----------------------
 from config.logs.logging import setup_logging
 from src.backend.core.message_queue import MessageQueue
 from src.backend.core.service_registry import ServiceRegistry
@@ -98,7 +60,7 @@ from src.backend.core.database.database import init_db, engine, Base
 # Logging Configuration
 # -----------------------
 logger = setup_logging()
-logger.info(f"Starting application with sys.path: {sys.path}")
+logger.info(f"Starting {settings.APP_NAME} service")
 
 # -----------------------
 # App Initialization
@@ -109,7 +71,27 @@ app = FastAPI(
     version=settings.APP_SERVICE_VERSION,
 )
 
-instrumentator = Instrumentator()
+# Setup Prometheus instrumentation with extended metrics
+instrumentator = Instrumentator(
+    should_group_status_codes=True,
+    should_ignore_untemplated=True,
+    should_respect_env_var=True,
+    should_instrument_requests_inprogress=True,
+    excluded_handlers=[".*admin.*", "/metrics"],
+    env_var_name="ENABLE_METRICS",
+)
+
+# Add custom metrics
+instrumentator.add(
+    metrics.latency(
+        should_include_method=True,
+        should_include_status=True,
+        should_include_handler=True,
+    )
+)
+instrumentator.add(metrics.requests())
+instrumentator.add(metrics.cpu_percent())
+instrumentator.add(metrics.memory_usage())
 
 # -----------------------
 # Middleware Setup
@@ -131,38 +113,55 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # -----------------------
 @app.on_event("startup")
 async def startup_event():
-    init_db()
-    Base.metadata.create_all(bind=engine)
+    logger.info("Service starting up...")
+    
+    # Initialize database
+    try:
+        init_db()
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Database initialization error: {str(e)}")
+    
+    # Initialize monitoring
     instrumentator.instrument(app)
+    logger.info("Metrics instrumentation set up")
 
+    # Set database URL for logging configuration if available
     db_url = os.getenv('DATABASE_URL')
     if db_url:
         logging_config.set_main_option('sqlalchemy.url', db_url)
 
     # Initialize and check services at startup
-    service_registry = ServiceRegistry()
-    healthy_services = await service_registry.discover_services()
-    if not healthy_services:
-        logger.warning("No healthy services detected at startup.")
-    else:
-        logger.info(f"Healthy services at startup: {list(healthy_services.keys())}")
+    try:
+        service_registry = ServiceRegistry()
+        healthy_services = await service_registry.discover_services()
+        if not healthy_services:
+            logger.warning("No healthy services detected at startup.")
+        else:
+            logger.info(f"Healthy services at startup: {list(healthy_services.keys())}")
+    except Exception as e:
+        logger.error(f"Service registry initialization error: {str(e)}")
     
     # Connect to Message Queue
-    global message_queue
-    message_queue = MessageQueue()
-    await message_queue.connect()
-    logger.info("MessageQueue connected at startup.")
+    try:
+        global message_queue
+        message_queue = MessageQueue()
+        await message_queue.connect()
+        logger.info("MessageQueue connected at startup.")
+    except Exception as e:
+        logger.error(f"MessageQueue connection error: {str(e)}")
 
 # -----------------------
 # Core Routes
 # -----------------------
 @app.get("/", tags=["System"])
 async def root():
-    return {"message": "Document Grouping API is running"}
+    return {"message": f"{settings.APP_NAME} API is running", "version": settings.APP_SERVICE_VERSION}
 
 @app.get("/health", tags=["System"])
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "service": settings.APP_NAME}
 
 @app.get("/metrics", tags=["System"])
 async def metrics():
@@ -182,8 +181,13 @@ app.include_router(grouping_api, prefix="/api/grouping", tags=["Grouping"])
 # -----------------------
 @app.on_event("shutdown")
 async def shutdown_event():
+    logger.info("Service shutting down...")
+    
     # Disconnect from Message Queue
-    global message_queue
-    if message_queue:
-        await message_queue.close()
-        logger.info("MessageQueue disconnected at shutdown.")
+    try:
+        global message_queue
+        if message_queue:
+            await message_queue.close()
+            logger.info("MessageQueue disconnected at shutdown.")
+    except Exception as e:
+        logger.error(f"Error during MessageQueue disconnect: {str(e)}")

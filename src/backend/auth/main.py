@@ -88,9 +88,12 @@ app = FastAPI(
 )
 
 # Initialize the service
-app = init_service(app, "auth")
-
-setup_routes(app)
+app = init_service(
+    service_name="auth",
+    routes_setup=setup_routes,
+    startup_handlers=[startup_handler],
+    shutdown_handlers=[shutdown_handler]
+)
 
 @app.get("/")
 def read_root():

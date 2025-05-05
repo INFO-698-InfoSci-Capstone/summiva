@@ -12,6 +12,10 @@ spec:
     metadata:
       labels:
         app: summiva-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8000"
     spec:
       containers:
       - name: summiva-api
@@ -39,6 +43,8 @@ spec:
             secretKeyRef:
               name: summiva-secrets
               key: db_password
+        - name: ENABLE_METRICS
+          value: "true"
         resources:
           requests:
             memory: "256Mi"
@@ -69,6 +75,10 @@ kind: Service
 metadata:
   name: summiva-backend
   namespace: summiva
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "8000"
 spec:
   selector:
     app: summiva-backend

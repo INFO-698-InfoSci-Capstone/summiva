@@ -17,6 +17,20 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
+  # Specific job for Summiva FastAPI backend metrics
+  - job_name: "summiva-backend"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["summiva-backend:8000"]
+    honor_labels: true
+
+  # Development environment - for local testing
+  - job_name: "summiva-backend-dev"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["localhost:8000"]
+    honor_labels: true
+
   # Scrape Kubernetes nodes (metrics like CPU, memory, disk)
   - job_name: "kubernetes-nodes"
     kubernetes_sd_configs:

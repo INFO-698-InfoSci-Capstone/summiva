@@ -20,10 +20,24 @@ from config.logs.logging import setup_logging
 # Get logger for this module
 logger = setup_logging("core.security.jwt")
 
-# JWT token settings
-ALGORITHM = settings.JWT_ALGORITHM
-SECRET_KEY = settings.JWT_SECRET_KEY
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+# JWT token settings with fallback values
+try:
+    ALGORITHM = settings.JWT_ALGORITHM
+except AttributeError:
+    logger.warning("JWT_ALGORITHM not found in settings, using default HS256")
+    ALGORITHM = "HS256"
+
+try:
+    SECRET_KEY = settings.JWT_SECRET_KEY
+except AttributeError:
+    logger.warning("JWT_SECRET_KEY not found in settings, using default (INSECURE)")
+    SECRET_KEY = "dev_jwt_secret_key_change_in_production"
+
+try:
+    ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+except AttributeError:
+    logger.warning("ACCESS_TOKEN_EXPIRE_MINUTES not found in settings, using default 30 minutes")
+    ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # OAuth2 token URL
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")

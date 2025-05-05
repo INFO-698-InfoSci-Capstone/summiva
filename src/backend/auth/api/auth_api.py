@@ -1,4 +1,5 @@
 from datetime import timedelta
+from src.backend.auth.database.connection import get_db
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -18,9 +19,8 @@ except ImportError:
         # Fallback to local import if in development
         from src.backend.auth.config.settings import settings
 
-from src.backend.auth.database.database import get_db
 from src.backend.auth.models.user import User
-from src.backend.auth.models.token import RefreshToken as RefreshTokenDB  # DB model for refresh tokens
+from src.backend.auth.models.user import RefreshToken as RefreshTokenDB  # DB model for refresh tokens
 from src.backend.auth.core.auth_logic import (
     verify_password,
     get_password_hash,
