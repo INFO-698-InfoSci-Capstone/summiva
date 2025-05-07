@@ -33,9 +33,9 @@ class Settings:
     USE_HTTPS: bool = os.environ.get("USE_HTTPS", "False") == "True"
 
     # --- Database ---
-    POSTGRES_USER: str = os.environ.get("POSTGRES_USER", "postgres")
-    POSTGRES_PASSWORD: str = os.environ.get("POSTGRES_PASSWORD", "postgres")
-    POSTGRES_DB: str = os.environ.get("POSTGRES_DB", "summiva")
+    POSTGRES_USER: str = os.environ.get("POSTGRES_USER", "summiva_user")
+    POSTGRES_PASSWORD: str = os.environ.get("POSTGRES_PASSWORD", "summiva_pass")
+    POSTGRES_DB: str = os.environ.get("POSTGRES_DB", "summiva_db")
     POSTGRES_HOST: str = os.environ.get("POSTGRES_HOST", "postgres")
     POSTGRES_PORT: int = int(os.environ.get("POSTGRES_PORT", "5432"))
     DATABASE_URL: str = os.environ.get(

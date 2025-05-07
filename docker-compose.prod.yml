@@ -69,9 +69,12 @@ services:
       - SERVICE_NAME=backend
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - POSTGRES_USER=${POSTGRES_USER:-summiva_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-summiva_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva_db}
+      - POSTGRES_USER=${POSTGRES_USER:-summiva_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-summiva_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva_db}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - MONGODB_HOST=mongodb
@@ -129,9 +132,9 @@ services:
       - SERVICE_NAME=auth
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - POSTGRES_USER=${POSTGRES_USER:-summiva_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-summiva_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva_db}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       # Security settings
@@ -454,16 +457,16 @@ services:
     expose:
       - 5432
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - POSTGRES_USER=${POSTGRES_USER:-summiva_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-summiva_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva_db}
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - summiva-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-summiva_user}"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "summiva_db"
     POSTGRES_HOST: str = "postgres"
     POSTGRES_PORT: str = "5432"
+    # Fixed connection string to ensure correct database name is used
     POSTGRES_DATABASE_URL:str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
     POSTGRES_DATABASE_POOL_SIZE: int = 5
     POSTGRES_DATABASE_MAX_OVERFLOW: int = 10

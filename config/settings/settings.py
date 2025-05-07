@@ -75,9 +75,9 @@ class Settings:
     AUTH_PASSWORD_SALT_ROUNDS: int = int(get_config("auth_password_salt_rounds", 12))
 
     # --- PostgreSQL ---
-    POSTGRES_USER: str = get_config("postgres_user", "postgres")
-    POSTGRES_PASSWORD: str = get_config("postgres_password", "postgres")
-    POSTGRES_DB: str = get_config("postgres_db", "summiva")
+    POSTGRES_USER: str = get_config("postgres_user", "summiva_user")
+    POSTGRES_PASSWORD: str = get_config("postgres_password", "summiva_pass")
+    POSTGRES_DB: str = get_config("postgres_db", "summiva_db")
     POSTGRES_HOST: str = get_config("postgres_host", "postgres")
     POSTGRES_PORT: int = int(get_config("postgres_port", 5432))
     DATABASE_URL: str = get_config("postgres.uri", f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
