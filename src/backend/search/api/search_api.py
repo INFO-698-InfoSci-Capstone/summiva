@@ -1,9 +1,9 @@
+from backend.search.database import get_db
 from config.settings import settings
 from fastapi import APIRouter, Depends, HTTPException, Security, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 from typing import List
-from src.database.session import get_db
 from src.database.mongo_session import mongo_db
 from src.models.search import SearchIndex, SearchHistory, SearchResult
 from src.schemas.search import (

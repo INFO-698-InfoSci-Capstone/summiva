@@ -9,7 +9,7 @@ import json
 import redis
 from redis import Redis
 
-from backend.core.imports import setup_imports
+from src.backend.core.imports import setup_imports
 setup_imports()
 
 from config.settings import settings

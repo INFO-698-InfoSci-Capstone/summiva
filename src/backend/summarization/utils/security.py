@@ -1,9 +1,9 @@
 # src/utils/security.py
 
+from backend import settings
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import requests
-from backend.summarization_service.src.config.settings import settings
 
 security = HTTPBearer()
 

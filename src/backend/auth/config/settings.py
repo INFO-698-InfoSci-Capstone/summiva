@@ -1,11 +1,17 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import os
 
 class Settings(BaseSettings):
     # Database settings
-    DATABASE_URL: str
-    DATABASE_POOL_SIZE: int = 5
-    DATABASE_MAX_OVERFLOW: int = 10
+    POSTGRES_USER: str = "summiva_user"
+    POSTGRES_PASSWORD: str = "summiva_pass"
+    POSTGRES_DB: str = "summiva_db"
+    POSTGRES_HOST: str = "postgres"
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DATABASE_URL:str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    POSTGRES_DATABASE_POOL_SIZE: int = 5
+    POSTGRES_DATABASE_MAX_OVERFLOW: int = 10
     
     # JWT settings
     JWT_SECRET_KEY: str

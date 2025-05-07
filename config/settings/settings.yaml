@@ -33,11 +33,11 @@ default:
 
 development:
   log_level: "DEBUG"
-  auth_service_url: "http://localhost:8000"
+  auth_service_url: "http://localhost:8000"  # OK for dev testing UI
   postgres:
-    uri: "postgresql://localhost/summiva_db"
+    uri: "postgresql://summiva_user:summiva_pass@postgres:5432/summiva_db"
   mongodb:
-    uri: "mongodb://localhost:27017"
+    uri: "mongodb://mongodb:27017"
 
 production:
   log_level: "WARNING"

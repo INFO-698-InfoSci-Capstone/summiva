@@ -1,3 +1,4 @@
+from backend.auth.models.user import User
 from fastapi import APIRouter, Depends, HTTPException, status, Security, Query, Path
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
@@ -11,7 +12,6 @@ setup_imports()
 
 # Database and Models
 from backend.summarization.utils.security import fetch_user_from_auth, get_authenticated_user_id
-from backend.auth.models import User
 from backend.summarization.core.summarizer import summarize_text
 from backend.summarization.models.summary import Document, Summary
 from backend.summarization.schemas import (

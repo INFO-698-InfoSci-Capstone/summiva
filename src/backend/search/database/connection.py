@@ -1,8 +1,8 @@
+from config.settings import settings
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from elasticsearch import AsyncElasticsearch
-from ..config.settings import settings
 
 # Create database engine
 engine = create_engine(

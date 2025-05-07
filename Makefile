@@ -14,13 +14,19 @@ PORTS = 8001 8002 8003 8004 8005
 # -----------------------------
 # 🚀 Docker Compose Targets
 # -----------------------------
+COMPOSE_PROJECT_NAME = summiva
+
 .PHONY: compose-up
 compose-up:
-	docker-compose -f docker-compose.yml --profile postgres --profile redis --profile mongodb --profile dev up
+	docker-compose -f docker-compose.yml \
+		--project-name $(COMPOSE_PROJECT_NAME) \
+		--profile postgres --profile redis --profile mongodb --profile dev up
 
 .PHONY: compose-down
 compose-down:
-	docker compose -f docker-compose.yml down
+	docker-compose -f docker-compose.yml \
+		--project-name $(COMPOSE_PROJECT_NAME) \
+		down --remove-orphans
 
 # -----------------------------
 # 🔧 Docker Image Build

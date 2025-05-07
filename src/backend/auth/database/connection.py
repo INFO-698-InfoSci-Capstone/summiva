@@ -5,9 +5,9 @@ from src.backend.auth.config import settings
 
 # Create database engine
 engine = create_engine(
-    settings.DATABASE_URL,
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW
+    settings.POSTGRES_DATABASE_URL,
+    pool_size=settings.POSTGRES_DATABASE_POOL_SIZE,
+    max_overflow=settings.POSTGRES_DATABASE_MAX_OVERFLOW
 )
 
 # Create session factory

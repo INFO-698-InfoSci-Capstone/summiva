@@ -11,16 +11,12 @@ except ImportError:
     from dotenv import load_dotenv
 
 # -----------------------------
-# Load .env files
+# Load .env file
 # -----------------------------
-env_paths = [
-    Path(__file__).parent / "secrets.env",
-    Path(__file__).parent.parent.parent / ".env",
-]
-for p in env_paths:
-    if p.exists():
-        load_dotenv(dotenv_path=p)
-        print(f"✅ Loaded env: {p}")
+env_path = Path(__file__).parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+    print(f"✅ Loaded env: {env_path}")
 
 # -----------------------------
 # Load settings.yaml
@@ -82,7 +78,7 @@ class Settings:
     POSTGRES_USER: str = get_config("postgres_user", "postgres")
     POSTGRES_PASSWORD: str = get_config("postgres_password", "postgres")
     POSTGRES_DB: str = get_config("postgres_db", "summiva")
-    POSTGRES_HOST: str = get_config("postgres_host", "localhost")
+    POSTGRES_HOST: str = get_config("postgres_host", "postgres")
     POSTGRES_PORT: int = int(get_config("postgres_port", 5432))
     DATABASE_URL: str = get_config("postgres.uri", f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
     POSTGRES_DATABASE_URL: str = DATABASE_URL
@@ -90,16 +86,20 @@ class Settings:
     DATABASE_MAX_OVERFLOW: int = int(get_config("database.max_overflow", 20))
 
     # --- MongoDB ---
-    MONGODB_URI: str = get_config("mongodb.uri", "mongodb://localhost:27017")
+    MONGODB_URI: str = get_config("mongodb.uri", "mongodb://mongodb:27017")
 
     # --- Redis ---
-    REDIS_HOST: str = get_config("redis.host", "localhost")
+    REDIS_HOST: str = get_config("redis.host", "redis")
     REDIS_PORT: int = int(get_config("redis.port", 6379))
     REDIS_DB: int = int(get_config("redis.db", 0))
     REDIS_URL: str = get_config("redis.url", f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
 
     # --- Celery ---
-    CELERY_BROKER_URL: str = get_config("celery.broker_url", "amqp://guest:guest@localhost:5672//")
+    RABBITMQ_USER: str = get_config("rabbitmq_user", "guest")
+    RABBITMQ_PASSWORD: str = get_config("rabbitmq_password", "guest")
+    RABBITMQ_PORT: int = int(get_config("rabbitmq_port", 5672))
+    CELERY_BROKER_URL: str = get_config("celery.broker_url", f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@rabbitmq:{RABBITMQ_PORT}//")
+
     CELERY_RESULT_BACKEND: str = get_config("celery.result_backend", "rpc://")
 
     # --- Search ---

@@ -4,7 +4,7 @@ Core Database Module
 Provides database utilities and session management for all services.
 """
 
-from backend.core.imports import setup_imports
+from src.backend.core.imports import setup_imports
 setup_imports()
 
 # PostgreSQL / SQLAlchemy

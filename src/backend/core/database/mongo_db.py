@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.errors import ConnectionFailure
 
-from backend.core.imports import setup_imports
+from src.backend.core.imports import setup_imports
 setup_imports()
 
 from config.settings import settings

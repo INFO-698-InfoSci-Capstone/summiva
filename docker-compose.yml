@@ -14,9 +14,9 @@ services:
   postgres:
     image: postgres:15
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - POSTGRES_USER=${POSTGRES_USER:-summiva_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-summiva_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva_db}
     ports:
       - "5432:5432"
     volumes:
@@ -25,7 +25,7 @@ services:
       - summiva-network
     profiles: ["all", "db", "postgres", "dev", "test", "api"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-summiva_user}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -99,9 +99,9 @@ services:
       - MONGODB_PORT=27017
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-summiva}
+      - POSTGRES_USER=${POSTGRES_USER:-summiva_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-summiva_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-summiva_db}
       - SECRET_KEY=${SECRET_KEY:-supersecretkey}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwtsupersecretkey}
       - JWT_ALGORITHM=HS256
@@ -127,6 +127,12 @@ services:
     labels:
       - "com.summiva.service=auth"
     profiles: ["all", "nlp", "dev"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     deploy:
       resources:
         limits:
