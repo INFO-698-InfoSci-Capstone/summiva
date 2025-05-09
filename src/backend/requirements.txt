@@ -34,6 +34,15 @@ sentence-transformers
 spacy
 bertopic
 faiss-cpu
+better-profanity>=0.22.0
+trafilatura>=1.6.0
+safe-scraper>=1.2.0
+optimum>=1.13.1  # For transformer optimizations
+
+# LLM Support
+bitsandbytes>=0.43.0  # For INT4/INT8 quantization
+accelerate>=0.24.0   # For efficient model loading
+peft>=0.7.0          # For LoRA fine-tuning
 
 # Search
 elasticsearch

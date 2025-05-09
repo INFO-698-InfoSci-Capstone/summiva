@@ -373,3 +373,45 @@ services:
         reservations:
           cpus: '0.5'
           memory: 1G
+
+  frontend:
+    build:
+      context: ./src/frontend/
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - BACKEND_BASE_URL=http://auth:8000
+      - AUTH_SERVICE_URL=http://auth:8000
+      - SUMMARIZATION_SERVICE_URL=http://summarization:8000
+      - TAGGING_SERVICE_URL=http://tagging:8000
+      - GROUPING_SERVICE_URL=http://grouping:8000
+      - SEARCH_SERVICE_URL=http://search:8000
+    volumes:
+      - ./src/frontend/:/app
+    networks:
+      - summiva-network
+    depends_on:
+      - auth
+      - summarization
+      - tagging
+      - grouping
+      - search
+    labels:
+      - "com.summiva.service=frontend"
+    profiles: ["all", "web", "dev", "frontend"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M

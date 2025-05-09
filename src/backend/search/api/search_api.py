@@ -3,7 +3,7 @@ from config.settings import settings
 from fastapi import APIRouter, Depends, HTTPException, Security, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any, Optional
 from src.database.mongo_session import mongo_db
 from src.models.search import SearchIndex, SearchHistory, SearchResult
 from src.schemas.search import (
@@ -17,6 +17,7 @@ from celery import Celery
 from src.services.search import SearchService
 from src.core.elastic_client import keyword_search
 from src.core.faiss_index import semantic_search
+from backend.search.core.hybrid_search import hybrid_search
 from src.utils.security import get_authenticated_user_id
 from core.dependencies import get_auth_client
 from core.api.auth_client import AuthAPIClient
@@ -30,7 +31,98 @@ celery = Celery(
     backend=str(settings.CELERY_RESULT_BACKEND)
 )
 
-# --- Search Route ---
+# --- Hybrid Search Route (Primary search endpoint) ---
+@router.get("/api/v1/hybrid-search", response_model=SearchResponse)
+async def hybrid_search_endpoint(
+    q: str = Query(..., description="Search query text"),
+    filters: Optional[Dict[str, Any]] = None,
+    size: int = Query(10, description="Number of results to return", ge=1, le=50),
+    alpha: float = Query(0.5, description="Weight for semantic vs keyword search (0-1)", ge=0, le=1),
+    index_name: str = Query("documents", description="Elasticsearch index to search"),
+    db: Session = Depends(get_db),
+    creds: HTTPAuthorizationCredentials = Security(security),
+    auth_client: AuthAPIClient = Depends(get_auth_client)
+):
+    """
+    Advanced Hybrid Search combining Elasticsearch and FAISS
+    
+    This endpoint provides a state-of-the-art hybrid search implementation that combines:
+    - Elasticsearch for keyword matching and metadata filtering
+    - FAISS for semantic vector search
+    - Result reranking using a weighted combination of both approaches
+    
+    The alpha parameter controls the balance between semantic (FAISS) and keyword (Elasticsearch) search:
+    - alpha = 1.0: Pure semantic search
+    - alpha = 0.0: Pure keyword search
+    - alpha = 0.5: Equal weighting (default)
+    """
+    try:
+        user_id = await auth_client.get_user_id(creds.credentials)
+
+        # Perform hybrid search
+        search_results = hybrid_search(
+            query=q,
+            index_name=index_name,
+            filters=filters,
+            size=size,
+            alpha=alpha
+        )
+        
+        # Enrich results with MongoDB data
+        docs_col = mongo_db["docs"]
+        hydrated_results = []
+        
+        for result in search_results:
+            doc_id = result["id"]
+            doc = docs_col.find_one({"_id": doc_id, "owner": user_id})
+            
+            if not doc:
+                continue
+                
+            hydrated_results.append({
+                "doc_id": doc_id,
+                "title": doc.get("title", "Untitled"),
+                "summary": doc.get("summary_text", ""),
+                "tags": doc.get("tags", []),
+                "group_id": doc.get("group_id", None),
+                "score": result["score"],
+                "search_type": result.get("search_type", "hybrid"),
+                "rank": result.get("rank", 0)
+            })
+
+        # Log search history in Postgres
+        search_history = SearchHistory(
+            user_id=user_id,
+            query=q,
+            results_count=len(hydrated_results),
+            search_type="hybrid"
+        )
+        db.add(search_history)
+        db.commit()
+
+        # Log top results for analysis
+        for result in hydrated_results[:10]:
+            search_result = SearchResult(
+                search_id=search_history.id,
+                document_id=result["doc_id"],
+                relevance_score=result["score"]
+            )
+            db.add(search_result)
+        db.commit()
+
+        return SearchResponse(
+            results=hydrated_results,
+            total_results=len(hydrated_results),
+            processing_time=0.0,  # Could be updated with actual timing info
+            search_type="hybrid"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+# --- Legacy Search Route (For backward compatibility) ---
 @router.get("/api/v1/search", response_model=SearchResponse)
 async def search_documents(
     q: str = Query(...),
@@ -40,7 +132,9 @@ async def search_documents(
     auth_client: AuthAPIClient = Depends(get_auth_client)
 ):
     """
-    Hybrid Search (Keyword + Semantic + Mongo enrichment + History logging)
+    Legacy search endpoint (Keyword + Semantic + Mongo enrichment)
+    
+    For backward compatibility. New implementations should use /hybrid-search.
     """
     try:
         user_id = await auth_client.get_user_id(creds.credentials)
