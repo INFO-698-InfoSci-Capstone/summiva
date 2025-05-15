@@ -16,14 +16,27 @@ spec:
       containers:
       - name: redis
         image: redis:7
+        command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: redis-password
         ports:
         - containerPort: 6379
         volumeMounts:
         - name: redis-data
           mountPath: /data
+        - name: redis-config
+          mountPath: /usr/local/etc/redis/redis.conf
+          subPath: redis.conf
       volumes:
       - name: redis-data
         emptyDir: {}
+      - name: redis-config
+        configMap:
+          name: redis-config
 
 ---
 apiVersion: v1

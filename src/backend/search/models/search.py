@@ -1,4 +1,4 @@
-from backend.core.models.base import BaseModel
+from src.backend.core.models.base import BaseModel
 from sqlalchemy import Column, Integer, String, Text, Float
 
 class SearchIndex(BaseModel):

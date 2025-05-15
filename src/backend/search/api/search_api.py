@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, Security, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
-from src.database.mongo_session import mongo_db
-from src.models.search import SearchIndex, SearchHistory, SearchResult
-from src.schemas.search import (
+from src.backend.search.database.mongo_session import mongo_db
+from models.search import SearchIndex, SearchHistory, SearchResult
+from src.backend.search.schemas.search import (
     SearchResponse,
     SearchIndexCreate,
     SearchIndexInDB,
@@ -14,13 +14,12 @@ from src.schemas.search import (
     SearchResultInDB
 )
 from celery import Celery
-from src.services.search import SearchService
-from src.core.elastic_client import keyword_search
-from src.core.faiss_index import semantic_search
-from backend.search.core.hybrid_search import hybrid_search
-from src.utils.security import get_authenticated_user_id
+from backend.search.services.search import SearchService
+from src.backend.search.core.elastic_client import keyword_search
+from src.backend.search.core.faiss_index import semantic_search
+from src.backend.search.core.hybrid_search import hybrid_search
 from core.dependencies import get_auth_client
-from core.api.auth_client import AuthAPIClient
+from src.core.api.auth_client import AuthAPIClient
 
 router = APIRouter()
 search_service = SearchService()

@@ -2,6 +2,8 @@
 fastapi==0.110.1
 uvicorn[standard]==0.27.1
 gunicorn
+aiohttp
+python-dotenv
 
 # Settings & Environment
 pydantic>=2.0,<3.0
@@ -13,6 +15,7 @@ email-validator
 sqlalchemy>=2.0
 psycopg2-binary
 alembic
+
 
 # Authentication & Security
 python-jose[cryptography]
@@ -34,9 +37,9 @@ sentence-transformers
 spacy
 bertopic
 faiss-cpu
-better-profanity>=0.22.0
+better-profanity>=0.7.0  # Latest version as of May 2025
 trafilatura>=1.6.0
-safe-scraper>=1.2.0
+# safe-scraper package isn't available, removed
 optimum>=1.13.1  # For transformer optimizations
 
 # LLM Support

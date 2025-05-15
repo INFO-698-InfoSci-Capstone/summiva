@@ -18,9 +18,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # Create Elasticsearch client
+# The 'timeout' parameter has been removed in newer versions of the AsyncElasticsearch client
 es_client = AsyncElasticsearch(
-    settings.ELASTICSEARCH_URL,
-    timeout=settings.ELASTICSEARCH_TIMEOUT
+    hosts=[settings.ELASTICSEARCH_URL]
 )
 
 def get_db():
@@ -32,5 +32,8 @@ def get_db():
         db.close()
 
 def get_es():
-    """Get Elasticsearch client"""
-    return es_client 
+    """Get Elasticsearch client with timeout configuration"""
+    # In newer versions, timeout is applied via the options method
+    return es_client.options(
+        request_timeout=settings.ELASTICSEARCH_TIMEOUT
+    )

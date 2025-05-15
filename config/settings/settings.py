@@ -2,13 +2,8 @@ import os, sys, yaml
 from pathlib import Path
 from functools import lru_cache
 from typing import List, Any
+from dotenv import load_dotenv
 
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-dotenv"])
-    from dotenv import load_dotenv
 
 # -----------------------------
 # Load .env file
@@ -79,9 +74,15 @@ class Settings:
     POSTGRES_PASSWORD: str = get_config("postgres_password", "summiva_pass")
     POSTGRES_DB: str = get_config("postgres_db", "summiva_db")
     POSTGRES_HOST: str = get_config("postgres_host", "postgres")
-    POSTGRES_PORT: int = int(get_config("postgres_port", 5432))
+    POSTGRES_PORT: int = int(get_config("postgres_port", 5432))    # Ensure the database name is always properly specified in the connection URL
     DATABASE_URL: str = get_config("postgres.uri", f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
     POSTGRES_DATABASE_URL: str = DATABASE_URL
+    
+    # Service-specific database URLs - ensure they all use the correct database name
+    AUTH_DATABASE_URL: str = DATABASE_URL
+    SEARCH_DATABASE_URL: str = DATABASE_URL
+    TAGGING_DATABASE_URL: str = DATABASE_URL
+    GROUPING_DATABASE_URL: str = DATABASE_URL
     DATABASE_POOL_SIZE: int = int(get_config("database.pool_size", 10))
     DATABASE_MAX_OVERFLOW: int = int(get_config("database.max_overflow", 20))
 
@@ -100,10 +101,10 @@ class Settings:
     RABBITMQ_PORT: int = int(get_config("rabbitmq_port", 5672))
     CELERY_BROKER_URL: str = get_config("celery.broker_url", f"amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@rabbitmq:{RABBITMQ_PORT}//")
 
-    CELERY_RESULT_BACKEND: str = get_config("celery.result_backend", "rpc://")
-
-    # --- Search ---
+    CELERY_RESULT_BACKEND: str = get_config("celery.result_backend", "rpc://")    # --- Search ---
     ELASTIC_URL: str = get_config("search.elastic_url", "http://elasticsearch:9200")
+    ELASTICSEARCH_URL: str = ELASTIC_URL  # Alias for ELASTIC_URL
+    ELASTICSEARCH_TIMEOUT: int = int(get_config("search.elasticsearch_timeout", 30))
     FAISS_INDEX_PATH: str = get_config("search.faiss_index_path", "faiss/index")
     FAISS_DOC_MAP_PATH: str = get_config("search.faiss_doc_map_path", "faiss/doc_ids.npy")
 

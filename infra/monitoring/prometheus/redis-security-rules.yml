@@ -1,0 +1,28 @@
+- name: 'redis_security_rules'
+  rules:
+  - alert: RedisAuthenticationFailure
+    expr: rate(redis_failed_auth_attempts_total[5m]) > 5
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: 'Redis authentication failures detected'
+      description: 'Redis instance is experiencing high rate of authentication failures, which may indicate a brute-force attack attempt.'
+      
+  - alert: RedisCrossProtocolScriptingAttempt
+    expr: redis_cross_protocol_attacks_total > 0
+    for: 0m
+    labels:
+      severity: critical
+    annotations:
+      summary: 'Cross Protocol Scripting attempt detected'
+      description: 'Redis instance has detected an attempt to use Cross Protocol Scripting attacks.'
+      
+  - alert: RedisRiskyCommandExecuted
+    expr: redis_commands_total{cmd=~"flushall|flushdb|config|eval"} > 0
+    for: 0m
+    labels:
+      severity: warning
+    annotations:
+      summary: 'Potentially dangerous Redis command executed'
+      description: 'A potentially dangerous Redis command has been executed: {{ $labels.cmd }}'

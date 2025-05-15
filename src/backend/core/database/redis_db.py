@@ -33,12 +33,11 @@ def get_redis_client() -> Redis:
     if _redis_client is None:
         # Get Redis connection parameters from settings
         redis_url = getattr(settings, "REDIS_URL", None)
-        if not redis_url:
-            # Construct from parts if full URL not provided
+        if not redis_url:            # Construct from parts if full URL not provided
             redis_host = getattr(settings, "REDIS_HOST", "localhost")
             redis_port = getattr(settings, "REDIS_PORT", 6379)
             redis_db = getattr(settings, "REDIS_DB", 0)
-            redis_password = getattr(settings, "REDIS_PASSWORD", None)
+            redis_password = getattr(settings, "REDIS_PASSWORD", "summiva_redis_password")
             
             logger.info(f"Connecting to Redis at {redis_host}:{redis_port}/{redis_db}")
             
@@ -49,7 +48,8 @@ def get_redis_client() -> Redis:
                 password=redis_password,
                 decode_responses=True,
                 socket_timeout=5,
-                socket_connect_timeout=5
+                socket_connect_timeout=5,
+                ssl=getattr(settings, "REDIS_USE_SSL", False)
             )
         else:
             logger.info(f"Connecting to Redis using URL: {redis_url}")

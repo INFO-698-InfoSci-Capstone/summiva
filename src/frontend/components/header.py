@@ -10,7 +10,7 @@ def create_header():
     # Create a modern header with responsive design
     with ui.header().classes("bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-md"):
         with ui.row().classes("w-full items-center justify-between p-2 container mx-auto"):
-            # Left section - Logo and main navigation
+            # Left section - Logo and maidon navigation
             with ui.row().classes("items-center gap-2"):
                 ui.label("📄").classes("text-2xl")  # Logo emoji
                 ui.label("Summiva").classes("text-2xl font-bold tracking-tight")
@@ -47,24 +47,24 @@ def create_header():
                 else:
                     ui.button("Login", on_click=lambda: ui.navigate("/login")).classes(
                         "bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded-lg transition-colors"
-                    )
-    
-    # Mobile menu (hamburger) - visible only on small screens
+                    )    # Mobile menu (hamburger) - visible only on small screens
     with ui.element("div").classes("md:hidden bg-blue-700 text-white p-2"):
         with ui.row().classes("justify-between items-center"):
-            ui.label("Menu").classes("text-sm")
+            ui.label("Menu").classes("text-sm")            # Hamburger menu button with connected menu
+            menu_button = ui.button(icon="menu").props("flat round").classes("text-white")
+            with menu_button:
+                ui.tooltip("Menu")  # Tooltip directly added to the button context
             
-            # Hamburger menu button
-            with ui.button(icon="menu").props("flat round").classes("text-white") as menu_button:
-                ui.tooltip("Menu")
-            
-            # Mobile menu
-            with ui.menu(menu_button).classes("w-full bg-blue-700 text-white"):
+            # Create menu and connect it to the button
+            menu = ui.menu().classes("w-full bg-blue-700 text-white")
+            menu_button.on("click", menu.open)
+            with menu:
                 ui.menu_item("Home", on_click=lambda: ui.navigate("/")).props("v-close-popup")
                 ui.menu_item("Advanced Search", on_click=lambda: ui.navigate("/advanced")).props("v-close-popup")
                 ui.menu_item("Summaries", on_click=lambda: ui.navigate("/summaries")).props("v-close-popup")
                 ui.separator()
                 
+                # Add user-specific menu items
                 if current_user:
                     ui.menu_item("My Profile", on_click=lambda: ui.navigate("/profile")).props("v-close-popup")
                     ui.menu_item("Settings", on_click=lambda: ui.navigate("/settings")).props("v-close-popup")

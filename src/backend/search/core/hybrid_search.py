@@ -89,24 +89,24 @@ class HybridSearchEngine:
         
         logger.info(f"Initialized HybridSearchEngine with ES hosts: {es_hosts}")
         self._initialized = True
-    
+        
     @property
     def es_client(self) -> Optional[Elasticsearch]:
         """Lazy-load the Elasticsearch client"""
         if self._es_client is None:
             self._es_client = self._create_es_client()
         return self._es_client
-    
+
     def _create_es_client(self) -> Optional[Elasticsearch]:
         """Create and configure Elasticsearch client"""
         try:
             # Create client with connection pooling and retry configuration
+            # Updated for compatibility with newer Elasticsearch client versions
             client = Elasticsearch(
-                self.es_hosts,
-                request_timeout=self.es_timeout,
+                hosts=self.es_hosts,
                 retry_on_timeout=True,
                 max_retries=self.max_retries
-            )
+            ).options(request_timeout=self.es_timeout)
             
             # Test connection
             start_time = time.time()
@@ -137,9 +137,8 @@ class HybridSearchEngine:
             logger.error("Elasticsearch client not available")
             return False
         
-        try:
-            # Check if index exists
-            if self.es_client.indices.exists(index=self.es_index):
+        try:            # Check if index exists with timeout option
+            if self.es_client.options(request_timeout=self.es_timeout).indices.exists(index=self.es_index):
                 logger.info(f"Elasticsearch index '{self.es_index}' already exists")
                 return True
                 
@@ -190,9 +189,10 @@ class HybridSearchEngine:
                         }
                     }
                 }
-            
-            # Create the index
-            self.es_client.indices.create(
+              # Create the index with timeout option
+            self.es_client.options(
+                request_timeout=self.es_timeout
+            ).indices.create(
                 index=self.es_index,
                 body=mappings
             )
@@ -353,8 +353,10 @@ class HybridSearchEngine:
             # Execute search with retries
             for attempt in range(self.max_retries):
                 try:
-                    start_time = time.time()
-                    response = self.es_client.search(
+                    start_time = time.time()                    # Apply request timeout via options
+                    response = self.es_client.options(
+                        request_timeout=self.es_timeout
+                    ).search(
                         index=self.es_index,
                         body=search_query
                     )
