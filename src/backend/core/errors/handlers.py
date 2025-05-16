@@ -3,6 +3,7 @@ Error Handlers
 ============
 Standardized FastAPI error handlers for consistent error responses.
 """
+from config.logging.logging import setup_logging
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -11,7 +12,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from backend.core.imports import setup_imports
 setup_imports()
 
-from config.logs.logging import setup_logging
 from backend.core.errors.exceptions import (
     AppError, 
     ValidationError,

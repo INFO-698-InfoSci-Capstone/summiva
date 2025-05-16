@@ -5,6 +5,7 @@ Provides utilities to standardize OpenAPI documentation across services.
 """
 from typing import Dict, Any, List, Optional, Callable
 import os
+from config.logging.logging import setup_logging
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
@@ -12,7 +13,6 @@ from backend.core.imports import setup_imports
 setup_imports()
 
 from config.settings import settings
-from config.logs.logging import setup_logging
 
 # Get logger for this module
 logger = setup_logging("core.docs")

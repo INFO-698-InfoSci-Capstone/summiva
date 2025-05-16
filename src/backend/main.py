@@ -5,47 +5,40 @@ import os
 import sys
 from pathlib import Path
 from logging import config as logging_config
-import importlib
 
 # -----------------------
 # Setup Python Path
 # -----------------------
-# Add project root to sys.path to enable absolute imports
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-# Import settings module with configurable precedence
-try:
-    from config.settings import settings
-except ImportError:
-    try:
-        from config.settings.settings import settings
-    except ImportError:
-        # Create a fallback settings class using env vars
-        class DefaultSettings:
-            def __init__(self):
-                self.APP_NAME = os.environ.get("APP_NAME", "Summiva")
-                self.APP_SERVICE_VERSION = os.environ.get("APP_SERVICE_VERSION", "1.0.0")
-                self.CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
-                self.CORS_ALLOW_CREDENTIALS = os.environ.get("CORS_ALLOW_CREDENTIALS", "True") == "True"
-                self.CORS_ALLOW_METHODS = ["*"]
-                self.CORS_ALLOW_HEADERS = ["*"]
-                
-        settings = DefaultSettings()
+# -----------------------
+# Default Settings
+# -----------------------
+class DefaultSettings:
+    def __init__(self):
+        self.APP_NAME = os.environ.get("APP_NAME", "Summiva")
+        self.APP_SERVICE_VERSION = os.environ.get("APP_SERVICE_VERSION", "1.0.0")
+        self.CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
+        self.CORS_ALLOW_CREDENTIALS = os.environ.get("CORS_ALLOW_CREDENTIALS", "True") == "True"
+        self.CORS_ALLOW_METHODS = ["*"]
+        self.CORS_ALLOW_HEADERS = ["*"]
+
+settings = DefaultSettings()
 
 # -----------------------
 # Third-Party Libraries
 # -----------------------
+from config.logging.logging import setup_logging
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from prometheus_fastapi_instrumentator import Instrumentator, metrics
+from prometheus_fastapi_instrumentator import Instrumentator, metrics as prom_metrics
 from prometheus_client import generate_latest, REGISTRY
 
 # -----------------------
 # Internal Modules
 # -----------------------
-from config.logs.logging import setup_logging
 from src.backend.core.message_queue import MessageQueue
 from src.backend.core.service_registry import ServiceRegistry
 from src.backend.auth.api import auth_api
@@ -67,11 +60,11 @@ logger.info(f"Starting {settings.APP_NAME} service")
 # -----------------------
 app = FastAPI(
     title=f"{settings.APP_NAME} API",
-    description=f"Enterprise-scale NLP system for content summarization, tagging, grouping, and search",
+    description="Enterprise-scale NLP system for content summarization, tagging, grouping, and search",
     version=settings.APP_SERVICE_VERSION,
 )
 
-# Setup Prometheus instrumentation with extended metrics
+# Setup Prometheus instrumentation
 instrumentator = Instrumentator(
     should_group_status_codes=True,
     should_ignore_untemplated=True,
@@ -81,17 +74,10 @@ instrumentator = Instrumentator(
     env_var_name="ENABLE_METRICS",
 )
 
-# Add custom metrics
-instrumentator.add(
-    metrics.latency(
-        should_include_method=True,
-        should_include_status=True,
-        should_include_handler=True,
-    )
-)
-instrumentator.add(metrics.requests())
-instrumentator.add(metrics.cpu_percent())
-instrumentator.add(metrics.memory_usage())
+instrumentator.add(prom_metrics.latency(should_include_method=True, should_include_status=True, should_include_handler=True))
+instrumentator.add(prom_metrics.requests())
+instrumentator.add(prom_metrics.cpu_percent())
+instrumentator.add(prom_metrics.memory_usage())
 
 # -----------------------
 # Middleware Setup
@@ -114,7 +100,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 @app.on_event("startup")
 async def startup_event():
     logger.info("Service starting up...")
-    
+
     # Initialize database
     try:
         init_db()
@@ -122,17 +108,18 @@ async def startup_event():
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Database initialization error: {str(e)}")
-    
-    # Initialize monitoring
+
+    # Instrument Prometheus
     instrumentator.instrument(app)
     logger.info("Metrics instrumentation set up")
 
-    # Set database URL for logging configuration if available
+    # Set DB URL for SQLAlchemy logs
     db_url = os.getenv('DATABASE_URL')
     if db_url:
-        logging_config.set_main_option('sqlalchemy.url', db_url)
+        logging_config.fileConfig("config/logging/logging.ini", disable_existing_loggers=False)
+        logging_config._main_conf.set("handlers", "sqlalchemy.url", db_url)
 
-    # Initialize and check services at startup
+    # Service discovery
     try:
         service_registry = ServiceRegistry()
         healthy_services = await service_registry.discover_services()
@@ -142,15 +129,31 @@ async def startup_event():
             logger.info(f"Healthy services at startup: {list(healthy_services.keys())}")
     except Exception as e:
         logger.error(f"Service registry initialization error: {str(e)}")
-    
-    # Connect to Message Queue
+
+    # Message Queue setup
     try:
-        global message_queue
         message_queue = MessageQueue()
         await message_queue.connect()
+        app.state.message_queue = message_queue
         logger.info("MessageQueue connected at startup.")
     except Exception as e:
         logger.error(f"MessageQueue connection error: {str(e)}")
+
+# -----------------------
+# Shutdown Event
+# -----------------------
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Service shutting down...")
+
+    # Disconnect Message Queue
+    try:
+        mq = getattr(app.state, "message_queue", None)
+        if mq:
+            await mq.close()
+            logger.info("MessageQueue disconnected at shutdown.")
+    except Exception as e:
+        logger.error(f"Error during MessageQueue disconnect: {str(e)}")
 
 # -----------------------
 # Core Routes
@@ -164,7 +167,7 @@ async def health_check():
     return {"status": "healthy", "service": settings.APP_NAME}
 
 @app.get("/metrics", tags=["System"])
-async def metrics():
+async def metrics_endpoint():
     return Response(generate_latest(REGISTRY), media_type="text/plain")
 
 # -----------------------
@@ -175,19 +178,3 @@ app.include_router(summarization_api, prefix="/api/summarization", tags=["Summar
 app.include_router(tagging_api, prefix="/api/tagging", tags=["Tagging"])
 app.include_router(search_api, prefix="/api/search", tags=["Search"])
 app.include_router(grouping_api, prefix="/api/grouping", tags=["Grouping"])
-
-# -----------------------
-# Shutdown Event
-# -----------------------
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("Service shutting down...")
-    
-    # Disconnect from Message Queue
-    try:
-        global message_queue
-        if message_queue:
-            await message_queue.close()
-            logger.info("MessageQueue disconnected at shutdown.")
-    except Exception as e:
-        logger.error(f"Error during MessageQueue disconnect: {str(e)}")
