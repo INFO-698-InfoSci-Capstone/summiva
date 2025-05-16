@@ -1,28 +1,27 @@
-from backend.auth.models.user import User
-from fastapi import APIRouter, Depends, HTTPException, status, Security, Query, Path
+from backend.summarization.services.content_ingestion import get_raw_text
+from src.backend.auth.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, status, Security, Path
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from datetime import datetime, timedelta
+from typing import List
+from datetime import datetime
 from bson.objectid import ObjectId
 
 # Use standardized imports
-from backend.core.imports import setup_imports
+from src.backend.core.imports import setup_imports
 setup_imports()
 
 # Database and Models
-from backend.summarization.utils.security import fetch_user_from_auth, get_authenticated_user_id
-from backend.summarization.core.summarizer import summarize_text
-from backend.summarization.models.summary import Document, Summary
-from backend.summarization.schemas import (
-    DocumentCreate, DocumentInDB, DocumentUpdate,
-    SummaryInDB, SummarizationRequest, SummarizationResponse,
-    DocumentFilter, SummaryFilter
+from src.backend.summarization.utils.security import fetch_user_from_auth, get_authenticated_user_id
+from src.backend.summarization.core.summarizer import summarize_text
+from src.backend.summarization.models.summary import Document, Summary
+from src.backend.summarization.schemas.user_schemas import (
+    DocumentCreate, DocumentInDB, SummaryInDB, SummarizationRequest, SummarizationResponse,
+    DocumentFilter
 )
-from backend.summarization.utils.security import get_raw_text
-from backend.summarization.database.mongo_session import mongo_db
-from backend.summarization.celery_tasks.worker import run_summarization
-from backend.core.database.database import get_db
+from src.backend.summarization.database.mongo_session import mongo_db
+from src.backend.summarization.celery_tasks.worker import run_summarization
+from src.backend.core.database.database import get_db
 from config.logs.logging import setup_logging
 
 router = APIRouter()
@@ -109,7 +108,7 @@ def enqueue_summarization(
         "summary_text": None,
         "status": "pending",
         "model": req.model.value,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(datetime.timezone.utc)
     })
     doc_id = str(doc_insert.inserted_id)
 

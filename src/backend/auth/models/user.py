@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 class User(BaseModel):
     __tablename__ = "users"
+    __table_args__ = {'extend_existing': True}
 
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
@@ -17,6 +18,7 @@ class User(BaseModel):
 
 class RefreshToken(BaseModel):
     __tablename__ = "refresh_tokens"
+    __table_args__ = {'extend_existing': True}
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     refresh_token = Column(Text, nullable=False, unique=True)

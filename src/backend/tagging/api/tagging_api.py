@@ -3,25 +3,25 @@ from sqlalchemy.orm import Session
 from typing import List
 from celery import Celery
 
-from core.database.database import get_db
+from backend.core.database.database import get_db
 
 from config.settings import settings
-from apps.auth.utils import get_current_user
-from apps.auth.models import User
-from .models import Tag, TaggedDocument
-from .schemas import (
+from backend.auth.utils import get_current_user
+from backend.auth.models.user import User
+from backend.core.models.document import Document
+from backend.tagging.models.tag import Tag, TaggedDocument
+from backend.tagging.schemas.schemas import (
     TagCreate,
     TagInDB,
-    TagUpdate,
     TaggedDocumentInDB,
     TaggingRequest,
     TaggingResponse
 )
-from .utils import extract_tags
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from backend.tagging.core.tagger import extract_tags
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, Security
 from bson import ObjectId
-from src.utils.security import get_authenticated_user_id
-from src.database.mongo_session import mongo_db
+from backend.tagging.utils.security import get_authenticated_user_id
+from backend.tagging.database.mongo_session import mongo_db
 
 security = HTTPBearer()
 router = APIRouter()
