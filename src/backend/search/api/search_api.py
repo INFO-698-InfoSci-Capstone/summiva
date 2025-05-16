@@ -1,25 +1,45 @@
-from backend.search.database import get_db
-from config.settings import settings
+# ----------------------------
+# Standard & Third-Party Imports
+# ----------------------------
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Security, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any, Optional
-from src.backend.search.database.mongo_session import mongo_db
+from celery import Celery
+
+# ----------------------------
+# Configuration & Dependencies
+# ----------------------------
+from config.settings import settings
+from core.dependencies import get_auth_client
+from src.core.api.auth_client import AuthAPIClient
+
+# ----------------------------
+# Database & Session
+# ----------------------------
+from backend.search.database import get_db
+from src.backend.search.database.mongo_session import mongo_db  # Only if used
+
+# ----------------------------
+# Models & Schemas
+# ----------------------------
 from models.search import SearchIndex, SearchHistory, SearchResult
 from src.backend.search.schemas.search import (
     SearchResponse,
     SearchIndexCreate,
     SearchIndexInDB,
     SearchHistoryInDB,
-    SearchResultInDB
+    SearchResultInDB,
 )
-from celery import Celery
-from backend.search.services.search import SearchService
+
+# ----------------------------
+# Services & Core Logic
+# ----------------------------
+from src.backend.search.services.search import SearchService
 from src.backend.search.core.elastic_client import keyword_search
 from src.backend.search.core.faiss_index import semantic_search
 from src.backend.search.core.hybrid_search import hybrid_search
-from core.dependencies import get_auth_client
-from src.core.api.auth_client import AuthAPIClient
+
 
 router = APIRouter()
 search_service = SearchService()

@@ -3,6 +3,7 @@
 Helper module to standardize service initialization across all Summiva services.
 """
 
+from config.logging.logging import setup_logging
 from fastapi import FastAPI
 from typing import Optional, Dict, Any, List, Callable, Union
 
@@ -12,7 +13,6 @@ setup_imports()
 from backend.core.middleware.core_middleware import setup_middlewares
 from backend.core.errors.handlers import setup_error_handlers
 from backend.core.docs.openapi import setup_openapi
-from config.logs.logging import setup_logging
 from backend.core.database.database import init_db, engine, Base
 
 def init_service(

@@ -6,6 +6,7 @@ Provides standardized Redis connections for all services that use caching or mes
 import logging
 from typing import Optional, Dict, Any, Union
 import json
+from config.logging.logging import setup_logging
 import redis
 from redis import Redis
 
@@ -13,7 +14,6 @@ from src.backend.core.imports import setup_imports
 setup_imports()
 
 from config.settings import settings
-from config.logs.logging import setup_logging
 
 # Get logger for this module
 logger = setup_logging("core.database.redis")

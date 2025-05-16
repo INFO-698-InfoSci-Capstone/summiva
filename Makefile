@@ -17,7 +17,7 @@ COMPOSE_PROJECT_NAME = summiva
 # -----------------------------
 .PHONY: compose-up
 compose-up:
-	docker-compose -f docker-compose.yml \
+	docker compose -f docker-compose.yml \
 		--project-name $(COMPOSE_PROJECT_NAME) \
 		--profile postgres --profile redis --profile mongodb --profile dev up
 
